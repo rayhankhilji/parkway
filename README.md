@@ -59,7 +59,7 @@ pnpm lint
 | Stage | What it covers                                                                       | State       |
 | ----- | ------------------------------------------------------------------------------------ | ----------- |
 | 1     | Workspace, tooling, design tokens                                                    | done        |
-| 2     | Engine foundations: state, board pack, seeded RNG, test harness                      | not started |
+| 2     | Engine foundations: state, board pack, seeded RNG, test harness                      | done        |
 | 3     | Turn loop, headless                                                                  | not started |
 | 4     | Database, server routes, live multiplayer                                            | not started |
 | 5     | Board and shell UI                                                                   | not started |
