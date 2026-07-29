@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { findNextSquareOfKind, getGroup, getSquare, isOwnable } from '../../src/board/lookup.js';
-import { getBoardPack } from '../../src/board/registry.js';
-import type { Square } from '../../src/board/types.js';
+import { findNextSquareOfKind, getGroup, getSquare, isOwnable } from '../../src/board/lookup';
+import { getBoardPack } from '../../src/board/registry';
+import type { Square } from '../../src/board/types';
 
 /**
  * The board is data, which means its failure mode is a typo rather than a bug —

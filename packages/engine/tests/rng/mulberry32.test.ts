@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRng, nextInt, nextUint32, rollDie, shuffle } from '../../src/rng/mulberry32.js';
+import { createRng, nextInt, nextUint32, rollDie, shuffle } from '../../src/rng/mulberry32';
 
 /**
  * The generator's job is not to be unpredictable — it is to be identical

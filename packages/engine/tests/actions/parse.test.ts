@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseAction, parseGameConfig } from '../../src/actions/parse.js';
+import { parseAction, parseGameConfig } from '../../src/actions/parse';
 
 /**
  * The parser's job is to reject anything a well-behaved client would never send,

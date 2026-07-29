@@ -1,10 +1,10 @@
-import type { Action } from '../../src/actions/types.js';
-import type { RuleViolation } from '../../src/errors.js';
-import type { GameEvent } from '../../src/events/types.js';
-import { getLegalActions } from '../../src/legalActions.js';
-import { reduce } from '../../src/reduce.js';
-import type { GameState, PlayerId } from '../../src/state/types.js';
-import { activePlayerId } from '../../src/state/selectors.js';
+import type { Action } from '../../src/actions/types';
+import type { RuleViolation } from '../../src/errors';
+import type { GameEvent } from '../../src/events/types';
+import { getLegalActions } from '../../src/legalActions';
+import { reduce } from '../../src/reduce';
+import type { GameState, PlayerId } from '../../src/state/types';
+import { activePlayerId } from '../../src/state/selectors';
 
 /**
  * Playing a sequence of actions in a test.

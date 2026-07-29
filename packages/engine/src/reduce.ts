@@ -1,13 +1,13 @@
-import type { Action, ActionMeta } from './actions/types.js';
-import { violation, type RuleViolation } from './errors.js';
-import type { GameEvent } from './events/types.js';
-import { isActionLegal } from './legalActions.js';
-import { handleEndTurn } from './phases/endTurn.js';
-import { handleRollForJail } from './phases/jail.js';
-import { handleRollDice } from './phases/roll.js';
-import { err, type Result } from './result.js';
-import type { GameState } from './state/types.js';
-import { findPlayer } from './state/selectors.js';
+import type { Action, ActionMeta } from './actions/types';
+import { violation, type RuleViolation } from './errors';
+import type { GameEvent } from './events/types';
+import { isActionLegal } from './legalActions';
+import { handleEndTurn } from './phases/endTurn';
+import { handleRollForJail } from './phases/jail';
+import { handleRollDice } from './phases/roll';
+import { err, type Result } from './result';
+import type { GameState } from './state/types';
+import { findPlayer } from './state/selectors';
 
 /**
  * The root reducer: the only way a game state changes.

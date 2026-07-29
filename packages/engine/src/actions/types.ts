@@ -1,5 +1,5 @@
-import type { SquareId } from '../board/types.js';
-import type { PlayerId, TradeSide } from '../state/types.js';
+import type { SquareId } from '../board/types';
+import type { PlayerId, TradeSide } from '../state/types';
 
 /**
  * Everything a player can ask the game to do.

@@ -1,7 +1,7 @@
-import { getOwnableSquare, getSquare, isOwnable } from '../board/lookup.js';
-import { getBoardPack } from '../board/registry.js';
-import type { BoardPack, GroupId, OwnableSquare, SquareId } from '../board/types.js';
-import type { DeedState, DiceRoll, GameState, PlayerId, PlayerState } from './types.js';
+import { getOwnableSquare, getSquare, isOwnable } from '../board/lookup';
+import { getBoardPack } from '../board/registry';
+import type { BoardPack, GroupId, OwnableSquare, SquareId } from '../board/types';
+import type { DeedState, DiceRoll, GameState, PlayerId, PlayerState } from './types';
 
 /**
  * Questions about a game in progress, answered without changing anything.

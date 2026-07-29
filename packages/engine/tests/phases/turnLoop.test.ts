@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { getBoardPack } from '../../src/board/registry.js';
-import { getLegalActions } from '../../src/legalActions.js';
-import { reduce } from '../../src/reduce.js';
-import { expectOk } from '../../src/result.js';
-import type { GameEvent } from '../../src/events/types.js';
-import type { GameState } from '../../src/state/types.js';
-import { buildState } from '../helpers/buildState.js';
-import { play, playForward, ScriptFailure, step } from '../helpers/play.js';
+import { getBoardPack } from '../../src/board/registry';
+import { getLegalActions } from '../../src/legalActions';
+import { reduce } from '../../src/reduce';
+import { expectOk } from '../../src/result';
+import type { GameEvent } from '../../src/events/types';
+import type { GameState } from '../../src/state/types';
+import { buildState } from '../helpers/buildState';
+import { play, playForward, ScriptFailure, step } from '../helpers/play';
 
 const pack = getBoardPack('parkway-classic');
 

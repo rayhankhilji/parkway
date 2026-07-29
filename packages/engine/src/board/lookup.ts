@@ -1,4 +1,4 @@
-import type { BoardPack, GroupDefinition, OwnableSquare, Square, SquareId } from './types.js';
+import type { BoardPack, GroupDefinition, OwnableSquare, Square, SquareId } from './types';
 
 /**
  * Questions you can ask a board without knowing anything about a game in

@@ -1,8 +1,8 @@
-import { violation, type RuleViolation } from '../errors.js';
-import { err, ok, type Result } from '../result.js';
-import type { GameState, PlayerId, TurnPhase } from '../state/types.js';
-import { activePlayerId, getPlayer } from '../state/selectors.js';
-import type { PhaseResult } from './roll.js';
+import { violation, type RuleViolation } from '../errors';
+import { err, ok, type Result } from '../result';
+import type { GameState, PlayerId, TurnPhase } from '../state/types';
+import { activePlayerId, getPlayer } from '../state/selectors';
+import type { PhaseResult } from './roll';
 
 /**
  * Handing the turn on.

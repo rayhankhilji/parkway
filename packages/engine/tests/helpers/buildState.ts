@@ -1,7 +1,7 @@
-import { isOwnable } from '../../src/board/lookup.js';
-import { getBoardPack } from '../../src/board/registry.js';
-import type { SquareId } from '../../src/board/types.js';
-import { createRng } from '../../src/rng/mulberry32.js';
+import { isOwnable } from '../../src/board/lookup';
+import { getBoardPack } from '../../src/board/registry';
+import type { SquareId } from '../../src/board/types';
+import { createRng } from '../../src/rng/mulberry32';
 import type {
   DeedState,
   GameConfig,
@@ -9,7 +9,7 @@ import type {
   Phase,
   PlayerId,
   PlayerState,
-} from '../../src/state/types.js';
+} from '../../src/state/types';
 
 /**
  * Building arbitrary positions for tests.

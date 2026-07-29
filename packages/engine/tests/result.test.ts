@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { err, expectOk, isErr, isOk, ok, type Result } from '../src/result.js';
+import { err, expectOk, isErr, isOk, ok, type Result } from '../src/result';
 
 describe('Result', () => {
   it('carries a value on the ok branch', () => {

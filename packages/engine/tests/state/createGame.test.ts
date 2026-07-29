@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { getBoardPack } from '../../src/board/registry.js';
-import { isOwnable } from '../../src/board/lookup.js';
-import { createGame, maxPlayers, minPlayers } from '../../src/state/createGame.js';
-import { expectOk } from '../../src/result.js';
-import { testConfig } from '../helpers/buildState.js';
+import { getBoardPack } from '../../src/board/registry';
+import { isOwnable } from '../../src/board/lookup';
+import { createGame, maxPlayers, minPlayers } from '../../src/state/createGame';
+import { expectOk } from '../../src/result';
+import { testConfig } from '../helpers/buildState';
 
 const pack = getBoardPack('parkway-classic');
 

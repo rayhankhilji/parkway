@@ -71,6 +71,32 @@ export default tseslint.config(
     },
   },
   {
+    /*
+     * The browser may never reach the database.
+     *
+     * Row level security denies the anon role everything, so a `.from()` call in
+     * browser code fails at runtime rather than leaking data — but it fails as a
+     * confusing empty result, days later, in someone's game. Catching the import
+     * that would allow it is cheaper. The `server/` modules carry the
+     * service-role key; only route handlers may import them.
+     */
+    files: ['apps/web/lib/**/*.ts', 'apps/web/components/**/*.{ts,tsx}', 'apps/web/store/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/server/*', '**/server/*'],
+              message:
+                'Browser code must not import the server layer — it holds the service-role key. Go through lib/apiClient.ts.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.config.{ts,js,mjs}', '**/*.test.ts'],
     rules: {
       'no-restricted-imports': 'off',

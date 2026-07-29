@@ -16,8 +16,8 @@ import {
   priceOf,
   solventPlayerIds,
   squareNameOf,
-} from '../../src/state/selectors.js';
-import { buildState, groupSquareIds, ownGroup } from '../helpers/buildState.js';
+} from '../../src/state/selectors';
+import { buildState, groupSquareIds, ownGroup } from '../helpers/buildState';
 
 /**
  * Selectors answer the questions the rules are built from, so a wrong answer

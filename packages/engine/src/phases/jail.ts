@@ -1,11 +1,11 @@
-import { violation, type RuleViolation } from '../errors.js';
-import type { GameEvent } from '../events/types.js';
-import { err, ok, type Result } from '../result.js';
-import type { GameState } from '../state/types.js';
-import { activePlayerId, boardOf, diceTotal, getPlayer, isDouble } from '../state/selectors.js';
-import { advanceBy } from '../rules/movement.js';
-import { payOrEnterDebt } from '../rules/payment.js';
-import { drawDice, resolveLanding, type PhaseResult } from './roll.js';
+import { violation, type RuleViolation } from '../errors';
+import type { GameEvent } from '../events/types';
+import { err, ok, type Result } from '../result';
+import type { GameState } from '../state/types';
+import { activePlayerId, boardOf, diceTotal, getPlayer, isDouble } from '../state/selectors';
+import { advanceBy } from '../rules/movement';
+import { payOrEnterDebt } from '../rules/payment';
+import { drawDice, resolveLanding, type PhaseResult } from './roll';
 
 /**
  * Trying to roll your way out of the gaol.

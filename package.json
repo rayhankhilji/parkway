@@ -12,9 +12,11 @@
     "build": "pnpm --filter @parkway/web build",
     "test": "vitest run",
     "test:engine": "vitest run --project engine",
+    "test:web": "vitest run --project web",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint . && prettier --check .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "db:migrate": "supabase db push"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -24,6 +26,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^5.1.0",
     "prettier": "^3.4.2",
+    "supabase": "^2.2.1",
     "typescript": "5.6.3",
     "typescript-eslint": "^8.19.0",
     "vitest": "^3.0.0"

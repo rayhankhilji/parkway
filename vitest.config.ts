@@ -11,6 +11,21 @@ export default defineConfig({
           environment: 'node',
         },
       },
+      {
+        test: {
+          name: 'web',
+          root: './apps/web',
+          include: ['tests/**/*.test.ts'],
+          environment: 'node',
+        },
+        resolve: {
+          alias: { '@': new URL('./apps/web/', import.meta.url).pathname },
+          // Modules marked `server-only` throw when imported without this
+          // condition. Under test we are the server, so we ask for that build
+          // rather than weakening the guard the app relies on.
+          conditions: ['react-server', 'node', 'import'],
+        },
+      },
     ],
   },
 });

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { getBoardPack } from '../../src/board/registry.js';
-import { createGame } from '../../src/state/createGame.js';
-import { toPublicState } from '../../src/state/publicState.js';
-import { expectOk } from '../../src/result.js';
-import { buildState, testConfig } from '../helpers/buildState.js';
+import { getBoardPack } from '../../src/board/registry';
+import { createGame } from '../../src/state/createGame';
+import { toPublicState } from '../../src/state/publicState';
+import { expectOk } from '../../src/result';
+import { buildState, testConfig } from '../helpers/buildState';
 
 const pack = getBoardPack('parkway-classic');
 

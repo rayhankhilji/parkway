@@ -1,11 +1,11 @@
-import { getSquare } from '../board/lookup.js';
-import { violation, type RuleViolation } from '../errors.js';
-import type { GameEvent } from '../events/types.js';
-import { err, ok, type Result } from '../result.js';
-import { rollDie, type RngState } from '../rng/mulberry32.js';
-import type { DiceRoll, GameState, PlayerId } from '../state/types.js';
-import { activePlayerId, boardOf, diceTotal, getPlayer, isDouble } from '../state/selectors.js';
-import { advanceBy, sendToJail } from '../rules/movement.js';
+import { getSquare } from '../board/lookup';
+import { violation, type RuleViolation } from '../errors';
+import type { GameEvent } from '../events/types';
+import { err, ok, type Result } from '../result';
+import { rollDie, type RngState } from '../rng/mulberry32';
+import type { DiceRoll, GameState, PlayerId } from '../state/types';
+import { activePlayerId, boardOf, diceTotal, getPlayer, isDouble } from '../state/selectors';
+import { advanceBy, sendToJail } from '../rules/movement';
 
 export type PhaseResult = {
   readonly state: GameState;

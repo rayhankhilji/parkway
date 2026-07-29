@@ -1,10 +1,10 @@
-import { getBoardPack } from '../board/registry.js';
-import { isOwnable } from '../board/lookup.js';
-import type { SquareId } from '../board/types.js';
-import { violation, type RuleViolation } from '../errors.js';
-import { createRng, shuffle } from '../rng/mulberry32.js';
-import { err, ok, type Result } from '../result.js';
-import type { DeedState, GameConfig, GameState, PlayerId, PlayerState } from './types.js';
+import { getBoardPack } from '../board/registry';
+import { isOwnable } from '../board/lookup';
+import type { SquareId } from '../board/types';
+import { violation, type RuleViolation } from '../errors';
+import { createRng, shuffle } from '../rng/mulberry32';
+import { err, ok, type Result } from '../result';
+import type { DeedState, GameConfig, GameState, PlayerId, PlayerState } from './types';
 
 /**
  * Turns a lobby roster into the opening position.

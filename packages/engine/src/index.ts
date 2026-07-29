@@ -7,7 +7,7 @@
  * list.
  */
 
-export { ok, err, isOk, isErr, expectOk, type Ok, type Err, type Result } from './result.js';
+export { ok, err, isOk, isErr, expectOk, type Ok, type Err, type Result } from './result';
 
 export {
   violation,
@@ -15,16 +15,9 @@ export {
   type RuleViolation,
   type RuleViolationCode,
   type MalformedAction,
-} from './errors.js';
+} from './errors';
 
-export {
-  createRng,
-  nextUint32,
-  nextInt,
-  rollDie,
-  shuffle,
-  type RngState,
-} from './rng/mulberry32.js';
+export { createRng, nextUint32, nextInt, rollDie, shuffle, type RngState } from './rng/mulberry32';
 
 export type {
   BoardPack,
@@ -37,9 +30,9 @@ export type {
   RentTable,
   Square,
   SquareId,
-} from './board/types.js';
+} from './board/types';
 
-export { getBoardPack, listBoardPackIds, defaultBoardPackId } from './board/registry.js';
+export { getBoardPack, listBoardPackIds, defaultBoardPackId } from './board/registry';
 
 export {
   countSquaresOfKind,
@@ -49,7 +42,7 @@ export {
   getSquare,
   isOwnable,
   listOwnableSquares,
-} from './board/lookup.js';
+} from './board/lookup';
 
 export type {
   DeckState,
@@ -64,11 +57,11 @@ export type {
   TradeOffer,
   TradeSide,
   TurnPhase,
-} from './state/types.js';
+} from './state/types';
 
-export { createGame, minPlayers, maxPlayers, type CreateGameInput } from './state/createGame.js';
+export { createGame, minPlayers, maxPlayers, type CreateGameInput } from './state/createGame';
 
-export { toPublicState } from './state/publicState.js';
+export { toPublicState } from './state/publicState';
 
 export {
   activePlayerId,
@@ -92,14 +85,14 @@ export {
   priceOf,
   solventPlayerIds,
   squareNameOf,
-} from './state/selectors.js';
+} from './state/selectors';
 
-export type { GameEvent, GameEventType } from './events/types.js';
+export type { GameEvent, GameEventType } from './events/types';
 
-export type { Action, ActionMeta, ActionType, LegalAction } from './actions/types.js';
+export type { Action, ActionMeta, ActionType, LegalAction } from './actions/types';
 
-export { parseAction, parseGameConfig } from './actions/parse.js';
+export { parseAction, parseGameConfig } from './actions/parse';
 
-export { reduce, type ReduceResult } from './reduce.js';
+export { reduce, type ReduceResult } from './reduce';
 
-export { getLegalActions, isActionLegal } from './legalActions.js';
+export { getLegalActions, isActionLegal } from './legalActions';

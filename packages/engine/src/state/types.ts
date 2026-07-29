@@ -1,5 +1,5 @@
-import type { DeckId, SquareId } from '../board/types.js';
-import type { RngState } from '../rng/mulberry32.js';
+import type { DeckId, SquareId } from '../board/types';
+import type { RngState } from '../rng/mulberry32';
 
 /**
  * The game document.

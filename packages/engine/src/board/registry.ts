@@ -1,5 +1,5 @@
-import type { BoardPack } from './types.js';
-import { parkwayClassic } from './packs/parkwayClassic.js';
+import type { BoardPack } from './types';
+import { parkwayClassic } from './packs/parkwayClassic';
 
 const packs: ReadonlyMap<string, BoardPack> = new Map([[parkwayClassic.id, parkwayClassic]]);
 

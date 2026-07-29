@@ -1,6 +1,6 @@
-import type { GameEvent } from '../events/types.js';
-import type { GameState, PlayerId, TurnPhase } from '../state/types.js';
-import { getPlayer } from '../state/selectors.js';
+import type { GameEvent } from '../events/types';
+import type { GameState, PlayerId, TurnPhase } from '../state/types';
+import { getPlayer } from '../state/selectors';
 
 /**
  * The single money path.

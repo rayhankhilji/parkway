@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getBoardPack } from '../../src/board/registry.js';
-import { getLegalActions } from '../../src/legalActions.js';
-import { reduce } from '../../src/reduce.js';
-import { expectOk } from '../../src/result.js';
-import type { GameState } from '../../src/state/types.js';
-import { buildState, type BuildStateOptions } from '../helpers/buildState.js';
+import { getBoardPack } from '../../src/board/registry';
+import { getLegalActions } from '../../src/legalActions';
+import { reduce } from '../../src/reduce';
+import { expectOk } from '../../src/result';
+import type { GameState } from '../../src/state/types';
+import { buildState, type BuildStateOptions } from '../helpers/buildState';
 
 const pack = getBoardPack('parkway-classic');
 

@@ -1,9 +1,9 @@
-import { getSquare } from '../board/lookup.js';
-import type { SquareId } from '../board/types.js';
-import type { GameEvent } from '../events/types.js';
-import type { GameState, PlayerId } from '../state/types.js';
-import { boardOf, getPlayer } from '../state/selectors.js';
-import { credit } from './payment.js';
+import { getSquare } from '../board/lookup';
+import type { SquareId } from '../board/types';
+import type { GameEvent } from '../events/types';
+import type { GameState, PlayerId } from '../state/types';
+import { boardOf, getPlayer } from '../state/selectors';
+import { credit } from './payment';
 
 /**
  * Moving a token, and the one thing that hangs off it: passing the start square.

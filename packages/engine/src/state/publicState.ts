@@ -1,4 +1,4 @@
-import type { GameState, PublicGameState } from './types.js';
+import type { GameState, PublicGameState } from './types';
 
 /**
  * The secret boundary. Every payload leaving the server passes through here.

@@ -1,4 +1,4 @@
-import type { BoardPack, Card, Square } from '../types.js';
+import type { BoardPack, Card, Square } from '../types';
 
 /**
  * Parkway Classic — the city of Ashvale.

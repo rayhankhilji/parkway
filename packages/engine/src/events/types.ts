@@ -1,5 +1,5 @@
-import type { DeckId, SquareId } from '../board/types.js';
-import type { DiceRoll, PlayerId, TradeSide } from '../state/types.js';
+import type { DeckId, SquareId } from '../board/types';
+import type { DiceRoll, PlayerId, TradeSide } from '../state/types';
 
 /**
  * What happened, structured.

@@ -1,7 +1,7 @@
-import { malformed, type MalformedAction } from '../errors.js';
-import { err, ok, type Result } from '../result.js';
-import type { GameConfig, TradeSide } from '../state/types.js';
-import type { Action } from './types.js';
+import { malformed, type MalformedAction } from '../errors';
+import { err, ok, type Result } from '../result';
+import type { GameConfig, TradeSide } from '../state/types';
+import type { Action } from './types';
 
 /**
  * Turning untrusted JSON into an Action.

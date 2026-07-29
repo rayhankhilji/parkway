@@ -1,6 +1,6 @@
-import type { LegalAction } from './actions/types.js';
-import type { GameState, PlayerId } from './state/types.js';
-import { activePlayerId, boardOf, getPlayer, findPlayer } from './state/selectors.js';
+import type { LegalAction } from './actions/types';
+import type { GameState, PlayerId } from './state/types';
+import { activePlayerId, boardOf, getPlayer, findPlayer } from './state/selectors';
 
 /**
  * What this player may do, right now.
