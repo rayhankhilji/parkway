@@ -99,3 +99,7 @@ export type { GameEvent, GameEventType } from './events/types.js';
 export type { Action, ActionMeta, ActionType, LegalAction } from './actions/types.js';
 
 export { parseAction, parseGameConfig } from './actions/parse.js';
+
+export { reduce, type ReduceResult } from './reduce.js';
+
+export { getLegalActions, isActionLegal } from './legalActions.js';
