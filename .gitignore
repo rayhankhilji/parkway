@@ -34,3 +34,4 @@ blob-report/
 # Local tooling
 .vercel/
 .eslintcache
+.claude/

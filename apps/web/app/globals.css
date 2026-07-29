@@ -1,0 +1,168 @@
+@import 'tailwindcss';
+
+/*
+ * The design system, as the only source of visual values in the app.
+ *
+ * Every colour, radius, spacing step, type size, shadow and easing curve in
+ * DESIGN.md is declared here and nowhere else. Tailwind's dynamic spacing scale is
+ * deliberately switched off below so that an off-scale value like `p-7` does not
+ * silently resolve — it simply produces no utility, which turns the design rule
+ * into a build-time fact rather than a review comment.
+ */
+
+@theme {
+  /* Reset Tailwind's defaults so only the values below can be used. */
+  --color-*: initial;
+  --spacing-*: initial;
+  --spacing: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --text-*: initial;
+  --font-*: initial;
+  --ease-*: initial;
+
+  /* Surfaces and text */
+  --color-bg: #0b0c0e;
+  --color-surface: #15171a;
+  --color-surface-raised: #1c1f24;
+  --color-border: #24272c;
+  --color-border-strong: #333840;
+  --color-text: #e9ebee;
+  --color-text-muted: #9aa1ab;
+  --color-text-faint: #6b727c;
+
+  /* Accent, money, status */
+  --color-accent: #6e8bff;
+  --color-accent-solid: #3b5bdb;
+  --color-money: #e3b341;
+  --color-success: #3fb950;
+  --color-warning: #d29922;
+  --color-danger: #f0616d;
+
+  /* Property groups — functional identity, never decorative */
+  --color-group-1: #8c6239;
+  --color-group-2: #7fc4e8;
+  --color-group-3: #d4589a;
+  --color-group-4: #e8873a;
+  --color-group-5: #e0474c;
+  --color-group-6: #e8c547;
+  --color-group-7: #3fa060;
+  --color-group-8: #4a6fd4;
+  --color-group-rail: #c3c8d0;
+  --color-group-utility: #8f97a3;
+
+  /* Player colours — assigned in seat order, unique within a game */
+  --color-player-rose: #f0616d;
+  --color-player-amber: #e3b341;
+  --color-player-emerald: #3fb950;
+  --color-player-sky: #57b6e8;
+  --color-player-violet: #a17bf0;
+  --color-player-slate: #98a0ac;
+
+  /* Utility colours the system needs but does not theme */
+  --color-white: #ffffff;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-inherit: inherit;
+  --color-scrim: rgb(0 0 0 / 0.6);
+
+  /* Spacing — base 4px, no intermediate steps */
+  --spacing-0: 0px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-10: 40px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+
+  /* Type — 14px base, 1.2 ratio */
+  --text-xs: 11px;
+  --text-xs--line-height: 16px;
+  --text-sm: 12px;
+  --text-sm--line-height: 18px;
+  --text-base: 14px;
+  --text-base--line-height: 21px;
+  --text-md: 17px;
+  --text-md--line-height: 24px;
+  --text-md--letter-spacing: -0.011em;
+  --text-lg: 20px;
+  --text-lg--line-height: 28px;
+  --text-lg--letter-spacing: -0.011em;
+  --text-xl: 24px;
+  --text-xl--line-height: 32px;
+  --text-xl--letter-spacing: -0.011em;
+  --text-2xl: 34px;
+  --text-2xl--line-height: 40px;
+  --text-2xl--letter-spacing: -0.011em;
+
+  /* Two families, no display face */
+  --font-sans: var(--font-inter), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Exactly two shadows. Nothing else in the system gets one. */
+  --shadow-popover: 0 8px 24px rgb(0 0 0 / 0.5);
+  --shadow-dialog: 0 16px 48px rgb(0 0 0 / 0.6);
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 120ms;
+  --duration-slow: 200ms;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    /* Dense application UI, not a marketing page. */
+    font-size: 14px;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Anything that changes in place must not reflow. */
+  .tabular,
+  [data-numeric] {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Focus is never removed, only made visible on keyboard interaction. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-solid);
+    color: var(--color-white);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
