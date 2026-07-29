@@ -66,6 +66,36 @@ export type {
   TurnPhase,
 } from './state/types.js';
 
+export { createGame, minPlayers, maxPlayers, type CreateGameInput } from './state/createGame.js';
+
+export { toPublicState } from './state/publicState.js';
+
+export {
+  activePlayerId,
+  boardOf,
+  buildingCostOf,
+  buildingsOn,
+  canPayInCash,
+  countOwnedOfKind,
+  diceTotal,
+  findPlayer,
+  getDeed,
+  getPlayer,
+  groupIsUnmortgaged,
+  isActivePlayer,
+  isDouble,
+  isSolvent,
+  liquidatableValue,
+  netWorth,
+  ownedSquares,
+  ownsFullGroup,
+  priceOf,
+  solventPlayerIds,
+  squareNameOf,
+} from './state/selectors.js';
+
 export type { GameEvent, GameEventType } from './events/types.js';
 
 export type { Action, ActionMeta, ActionType, LegalAction } from './actions/types.js';
+
+export { parseAction, parseGameConfig } from './actions/parse.js';
