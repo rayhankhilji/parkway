@@ -1,9 +1,17 @@
 import type { LegalAction } from './actions/types';
 import type { GameState, PlayerId } from './state/types';
 import { minimumBid } from './phases/auction';
+import { canManage } from './rules/management';
 import { buildableSquares, sellableSquares } from './rules/building';
 import { mortgageableSquares, unmortgageableSquares } from './rules/mortgage';
-import { activePlayerId, boardOf, findPlayer, getPlayer, priceOf } from './state/selectors';
+import {
+  activePlayerId,
+  boardOf,
+  findPlayer,
+  getPlayer,
+  priceOf,
+  solventPlayerIds,
+} from './state/selectors';
 
 /**
  * What this player may do, right now.
@@ -126,6 +134,22 @@ export function getLegalActions(state: GameState, playerId: PlayerId): readonly 
 
   const redeemable = unmortgageableSquares(state, playerId);
   if (redeemable.length > 0) actions.push({ type: 'UNMORTGAGE', squareIds: redeemable });
+
+  /*
+   * Trading is not a phase, so it is appended after the phase switch rather than
+   * inside it — the same reasoning that keeps building out of the machine (→ D10).
+   */
+  if (canManage(state, playerId)) {
+    if (state.openTrade === null) {
+      const candidates = solventPlayerIds(state).filter((id) => id !== playerId);
+      if (candidates.length > 0) actions.push({ type: 'OFFER_TRADE', candidateIds: candidates });
+    } else if (state.openTrade.toId === playerId) {
+      actions.push({ type: 'ACCEPT_TRADE', tradeId: state.openTrade.id });
+      actions.push({ type: 'DECLINE_TRADE', tradeId: state.openTrade.id });
+    } else if (state.openTrade.fromId === playerId) {
+      actions.push({ type: 'WITHDRAW_TRADE', tradeId: state.openTrade.id });
+    }
+  }
 
   return actions;
 }

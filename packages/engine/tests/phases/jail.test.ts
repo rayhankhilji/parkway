@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { getBoardPack } from '../../src/board/registry';
-import { getLegalActions } from '../../src/legalActions';
 import { reduce } from '../../src/reduce';
 import { expectOk } from '../../src/result';
 import type { GameState } from '../../src/state/types';
 import { buildState, type BuildStateOptions } from '../helpers/buildState';
 import { declineAnyPurchase } from '../helpers/play';
+import { turnActionTypes } from '../helpers/actions';
 
 const pack = getBoardPack('parkway-classic');
 
@@ -234,7 +234,7 @@ describe('paying the fine', () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('INSUFFICIENT_FUNDS');
-    expect(getLegalActions(state, 'ada').map((action) => action.type)).toEqual(['ROLL_FOR_JAIL']);
+    expect(turnActionTypes(state, 'ada')).toEqual(['ROLL_FOR_JAIL']);
   });
 
   it('feeds the pot when that variant is on', () => {
@@ -312,14 +312,12 @@ describe('using a release card', () => {
     const result = reduce(state, { type: 'USE_JAIL_CARD' }, { playerId: 'ada', now: 0 });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('NO_JAIL_CARD');
-    expect(getLegalActions(state, 'ada').map((action) => action.type)).not.toContain(
-      'USE_JAIL_CARD',
-    );
+    expect(turnActionTypes(state, 'ada')).not.toContain('USE_JAIL_CARD');
   });
 
   it('is offered ahead of the fine, since it costs nothing', () => {
     const state = jailed({ players: { ada: { heldJailCards: ['chance'] } } });
-    expect(getLegalActions(state, 'ada').map((action) => action.type)).toEqual([
+    expect(turnActionTypes(state, 'ada')).toEqual([
       'USE_JAIL_CARD',
       'PAY_JAIL_FINE',
       'ROLL_FOR_JAIL',

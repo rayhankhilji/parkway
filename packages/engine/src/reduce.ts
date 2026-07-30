@@ -7,6 +7,12 @@ import { handleAuctionTimeout, handlePassBid, handlePlaceBid } from './phases/au
 import { handlePayJailFine, handleRollForJail, handleUseJailCard } from './phases/jail';
 import { handleBuyProperty, handleDeclinePurchase } from './phases/purchase';
 import { handleRollDice } from './phases/roll';
+import {
+  handleAcceptTrade,
+  handleDeclineTrade,
+  handleOfferTrade,
+  handleWithdrawTrade,
+} from './phases/trade';
 import { buildHouse, sellBuilding } from './rules/building';
 import { mortgage, unmortgage } from './rules/mortgage';
 import { err, type Result } from './result';
@@ -104,6 +110,14 @@ export function reduce(
       return handlePassBid(state, meta.playerId, meta.now);
     case 'AUCTION_TIMEOUT':
       return handleAuctionTimeout(state, meta.now);
+    case 'OFFER_TRADE':
+      return handleOfferTrade(state, meta.playerId, action.toId, action.offered, action.requested);
+    case 'ACCEPT_TRADE':
+      return handleAcceptTrade(state, meta.playerId);
+    case 'DECLINE_TRADE':
+      return handleDeclineTrade(state, meta.playerId);
+    case 'WITHDRAW_TRADE':
+      return handleWithdrawTrade(state, meta.playerId);
     case 'BUILD_HOUSE':
       return buildHouse(state, meta.playerId, action.squareId);
     case 'SELL_HOUSE':

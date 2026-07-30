@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { getLegalActions } from '../../src/legalActions';
 import { reduce } from '../../src/reduce';
 import { expectOk } from '../../src/result';
 import type { GameState } from '../../src/state/types';
 import { buildState, type BuildStateOptions } from '../helpers/buildState';
+import { turnActions } from '../helpers/actions';
 
 /**
  * PRD F6 — buy or decline.
@@ -27,7 +27,7 @@ function act(state: GameState, type: 'BUY_PROPERTY' | 'DECLINE_PURCHASE', player
 describe('the offer', () => {
   it('offers both choices to a player who can afford it', () => {
     const state = deciding(1);
-    expect(getLegalActions(state, 'ada')).toEqual([
+    expect(turnActions(state, 'ada')).toEqual([
       { type: 'BUY_PROPERTY', squareId: 1, price: 60 },
       { type: 'DECLINE_PURCHASE', squareId: 1 },
     ]);
@@ -36,11 +36,11 @@ describe('the offer', () => {
   it('offers only the decline to a player who cannot', () => {
     // A button that exists only to be refused is worse than no button.
     const state = deciding(39, { players: { ada: { position: 39, cash: 100 } } });
-    expect(getLegalActions(state, 'ada')).toEqual([{ type: 'DECLINE_PURCHASE', squareId: 39 }]);
+    expect(turnActions(state, 'ada')).toEqual([{ type: 'DECLINE_PURCHASE', squareId: 39 }]);
   });
 
   it('offers nothing to the other players', () => {
-    expect(getLegalActions(deciding(1), 'bo')).toEqual([]);
+    expect(turnActions(deciding(1), 'bo')).toEqual([]);
   });
 });
 

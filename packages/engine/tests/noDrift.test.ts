@@ -206,8 +206,13 @@ describe('nothing is offered to someone who cannot act', () => {
     }
   });
 
-  it('offers nothing while a debt is open, since settling is not built yet', () => {
+  it('offers a debtor only the ways to raise money, and everyone else nothing', () => {
+    // PRD F12: a debt blocks the debtor's ordinary play but not their ability to
+    // sell, mortgage and trade — that is the whole point of the phase. Everyone
+    // else waits.
     const state = buildState({
+      players: { ada: { cash: 10 } },
+      deeds: { 1: { ownerId: 'ada' }, 3: { ownerId: 'ada' } },
       phase: {
         kind: 'awaiting_debt',
         debtorId: 'ada',
@@ -217,8 +222,11 @@ describe('nothing is offered to someone who cannot act', () => {
         remaining: [],
       },
     });
-    for (const id of state.turnOrder) {
-      expect(getLegalActions(state, id)).toEqual([]);
-    }
+
+    expect(getLegalActions(state, 'ada').map((action) => action.type)).toEqual([
+      'MORTGAGE',
+      'OFFER_TRADE',
+    ]);
+    expect(getLegalActions(state, 'bo')).toEqual([]);
   });
 });

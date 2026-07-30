@@ -6,6 +6,7 @@ import { expectOk } from '../../src/result';
 import type { GameEvent } from '../../src/events/types';
 import type { GameState } from '../../src/state/types';
 import { buildState } from '../helpers/buildState';
+import { turnActions, turnActionTypes } from '../helpers/actions';
 import {
   declineAnyPurchase,
   play,
@@ -141,7 +142,7 @@ describe('doubles', () => {
 
     const settled = declineAnyPurchase(after);
     expect(settled.phase.kind).toBe('awaiting_roll');
-    expect(getLegalActions(settled, 'ada').map((action) => action.type)).toEqual(['ROLL_DICE']);
+    expect(turnActionTypes(settled, 'ada')).toEqual(['ROLL_DICE']);
   });
 
   /** PRD F4 — a double then a non-double is two rolls and no more. */
@@ -157,7 +158,7 @@ describe('doubles', () => {
     }
 
     expect(state.phase.kind).toBe('awaiting_end_turn');
-    expect(getLegalActions(state, 'ada').map((action) => action.type)).toEqual(['END_TURN']);
+    expect(turnActionTypes(state, 'ada')).toEqual(['END_TURN']);
   });
 
   it('counts each double as it is rolled', () => {
@@ -230,7 +231,7 @@ describe('three doubles', () => {
 
   it('ends the turn, so the third double grants no further roll', () => {
     const state = rollOutTurn(buildState({ seed: tripleDoubleSeed }));
-    expect(getLegalActions(state, 'ada').map((action) => action.type)).toEqual(['END_TURN']);
+    expect(turnActionTypes(state, 'ada')).toEqual(['END_TURN']);
   });
 });
 
@@ -320,10 +321,7 @@ describe('ending a turn', () => {
     const { state: after } = play(rollAndSettle(state), [step({ type: 'END_TURN' })]);
     expect(after.phase.kind).toBe('awaiting_jail_decision');
     // The fine is offered too, since Bo can afford it.
-    expect(getLegalActions(after, 'bo').map((action) => action.type)).toEqual([
-      'PAY_JAIL_FINE',
-      'ROLL_FOR_JAIL',
-    ]);
+    expect(turnActionTypes(after, 'bo')).toEqual(['PAY_JAIL_FINE', 'ROLL_FOR_JAIL']);
   });
 
   it('refuses to end a turn before rolling', () => {
@@ -335,7 +333,7 @@ describe('ending a turn', () => {
 
 describe('legal actions', () => {
   it('offers nothing to a player whose turn it is not', () => {
-    expect(getLegalActions(buildState(), 'bo')).toEqual([]);
+    expect(turnActions(buildState(), 'bo')).toEqual([]);
   });
 
   it('offers nothing to a bankrupt player on their own turn', () => {

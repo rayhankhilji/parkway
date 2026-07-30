@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { getLegalActions } from '../../src/legalActions';
 import { minimumBid, openAuction } from '../../src/phases/auction';
 import { reduce } from '../../src/reduce';
 import { expectOk } from '../../src/result';
 import type { Action } from '../../src/actions/types';
 import type { GameState } from '../../src/state/types';
 import { buildState, type BuildStateOptions } from '../helpers/buildState';
+import { turnActions, turnActionTypes } from '../helpers/actions';
 
 /**
  * PRD F8 — the auction.
@@ -56,10 +56,7 @@ describe('opening', () => {
   it('offers bidding to everyone, not just the active player', () => {
     const state = auctioning();
     for (const id of ['ada', 'bo', 'cy']) {
-      expect(getLegalActions(state, id).map((action) => action.type)).toEqual([
-        'PLACE_BID',
-        'PASS_BID',
-      ]);
+      expect(turnActionTypes(state, id)).toEqual(['PLACE_BID', 'PASS_BID']);
     }
   });
 });
@@ -114,7 +111,7 @@ describe('bidding', () => {
       { type: 'PLACE_BID', amount: 50 },
       'bo',
     );
-    expect(getLegalActions(state, 'cy').map((action) => action.type)).toEqual(['PASS_BID']);
+    expect(turnActionTypes(state, 'cy')).toEqual(['PASS_BID']);
   });
 
   it('restarts the clock on each bid, so a late bid can be answered', () => {
@@ -128,7 +125,7 @@ describe('passing', () => {
   it('takes the player out of the running for good', () => {
     const state = act(auctioning(), { type: 'PASS_BID' }, 'cy');
     expect(state.phase).toMatchObject({ activeBidderIds: ['ada', 'bo'] });
-    expect(getLegalActions(state, 'cy')).toEqual([]);
+    expect(turnActions(state, 'cy')).toEqual([]);
   });
 
   it('refuses a second pass', () => {
@@ -150,7 +147,7 @@ describe('passing', () => {
     const result = attempt(state, { type: 'PASS_BID' }, 'bo');
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('ALREADY_PASSED');
-    expect(getLegalActions(state, 'bo').map((action) => action.type)).toEqual(['PLACE_BID']);
+    expect(turnActionTypes(state, 'bo')).toEqual(['PLACE_BID']);
   });
 });
 

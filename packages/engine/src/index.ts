@@ -114,6 +114,13 @@ export { getLegalActions, isActionLegal } from './legalActions';
 export { minimumBid, openAuction, auctionInProgress } from './phases/auction';
 
 export {
+  handleOfferTrade,
+  handleAcceptTrade,
+  handleDeclineTrade,
+  handleWithdrawTrade,
+} from './phases/trade';
+
+export {
   buildHouse,
   sellBuilding,
   buildableSquares,
