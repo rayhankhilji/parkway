@@ -1,22 +1,31 @@
 import type { Action, ActionMeta } from './actions/types';
 import { violation, type RuleViolation } from './errors';
 import type { GameEvent } from './events/types';
-import { isActionLegal } from './legalActions';
+import { findPlayer, isActivePlayer } from './state/selectors';
 import { handleEndTurn } from './phases/endTurn';
 import { handleRollForJail } from './phases/jail';
+import { handleBuyProperty, handleDeclinePurchase } from './phases/purchase';
 import { handleRollDice } from './phases/roll';
 import { err, type Result } from './result';
 import type { GameState } from './state/types';
-import { findPlayer } from './state/selectors';
 
 /**
  * The root reducer: the only way a game state changes.
  *
- * It runs three checks before any handler sees the action — the actor is in the
- * game, the game is not over, and the action is one getLegalActions would offer
- * them — and then dispatches. Checking legality centrally rather than inside
- * each handler is what guarantees the buttons a client is shown and the actions
- * the server accepts cannot drift apart.
+ * Three things are checked centrally, because every handler would otherwise
+ * repeat them: the actor is in the game, they are not already out, and the game is
+ * still running. Acting out of turn is checked here too, for the actions that
+ * belong to the active player.
+ *
+ * Everything else is the handler's own business. A handler knows why it is
+ * refusing — that a purchase is unaffordable, that a bid is below the minimum —
+ * and a general gate in front of it could only answer "wrong phase", which is
+ * vaguer and often untrue.
+ *
+ * What keeps the UI and the server in step is a one-directional property, not a
+ * shared gate: everything getLegalActions offers, reduce accepts. That is asserted
+ * by a test. The converse was never needed, and insisting on it is what cost the
+ * precise refusal message.
  *
  * Errors are returned, never thrown. A rule violation is the expected result of
  * an untrusted client asking for something disallowed, and the API turns it into
@@ -50,10 +59,27 @@ export function reduce(
     return err(violation('WRONG_PHASE', 'This game has already started.'));
   }
 
-  if (!isActionLegal(state, meta.playerId, action.type)) {
-    return err(refusalFor(state, meta.playerId, action));
+  // Acting out of turn is checked here rather than in each handler, because it is
+  // the one refusal every handler would otherwise have to repeat, and because it
+  // is the one a player is most likely to hit by accident.
+  if (requiresTurn(action.type) && !isActivePlayer(state, meta.playerId)) {
+    return err(violation('NOT_YOUR_TURN', 'It is not your turn.'));
   }
 
+  /*
+   * Dispatch to the handler and let it refuse in its own words.
+   *
+   * The handlers, not this function, are the authority on their own constraints.
+   * A purchase nobody can afford should say so — routing it through a general
+   * legality gate first would answer "wrong phase", which is both vaguer and
+   * untrue.
+   *
+   * getLegalActions still governs what a client is *offered*: it omits a purchase
+   * the player cannot fund, so the button never appears. The property that matters
+   * is one-directional and asserted by a test — everything offered is accepted.
+   * The converse was never needed, and insisting on it is what cost the precise
+   * message.
+   */
   switch (action.type) {
     case 'ROLL_DICE':
       return handleRollDice(state);
@@ -61,26 +87,35 @@ export function reduce(
       return handleRollForJail(state);
     case 'END_TURN':
       return handleEndTurn(state);
+    case 'BUY_PROPERTY':
+      return handleBuyProperty(state);
+    case 'DECLINE_PURCHASE':
+      return handleDeclinePurchase(state);
     default:
-      return err(
-        violation('WRONG_PHASE', 'That is not something you can do at this point in the game.'),
-      );
+      return err(violation('WRONG_PHASE', `You cannot ${describe(action)} right now.`));
   }
 }
 
 /**
- * Why an action was refused.
+ * Whether an action belongs to the player whose turn it is.
  *
- * The message a player reads should say what is actually wrong. "It is not your
- * turn" and "you cannot roll twice" are both refusals of the same action, and
- * showing the wrong one turns a clear rule into a confusing bug report.
+ * Bidding, trading and property management are deliberately absent: the real rules
+ * let those happen on somebody else's turn (→ D10), so their handlers decide for
+ * themselves who may act.
  */
-function refusalFor(state: GameState, playerId: string, action: Action): RuleViolation {
-  const activeId = state.turnOrder[state.activeIndex];
-  if (activeId !== undefined && activeId !== playerId) {
-    return violation('NOT_YOUR_TURN', 'It is not your turn.');
+function requiresTurn(type: Action['type']): boolean {
+  switch (type) {
+    case 'ROLL_DICE':
+    case 'ROLL_FOR_JAIL':
+    case 'PAY_JAIL_FINE':
+    case 'USE_JAIL_CARD':
+    case 'BUY_PROPERTY':
+    case 'DECLINE_PURCHASE':
+    case 'END_TURN':
+      return true;
+    default:
+      return false;
   }
-  return violation('WRONG_PHASE', `You cannot ${describe(action)} right now.`);
 }
 
 function describe(action: Action): string {

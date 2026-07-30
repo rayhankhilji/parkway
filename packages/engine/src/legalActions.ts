@@ -1,6 +1,6 @@
 import type { LegalAction } from './actions/types';
 import type { GameState, PlayerId } from './state/types';
-import { activePlayerId, boardOf, getPlayer, findPlayer } from './state/selectors';
+import { activePlayerId, boardOf, findPlayer, getPlayer, priceOf } from './state/selectors';
 
 /**
  * What this player may do, right now.
@@ -48,6 +48,19 @@ export function getLegalActions(state: GameState, playerId: PlayerId): readonly 
       break;
 
     case 'awaiting_purchase':
+      if (isActive) {
+        const squareId = state.phase.squareId;
+        const price = priceOf(state, squareId);
+        // The purchase is only offered when it can actually be paid for. A player
+        // who cannot afford it has one choice, and pretending otherwise would mean
+        // a button that exists only to be refused (→ PRD F6).
+        if (getPlayer(state, playerId).cash >= price) {
+          actions.push({ type: 'BUY_PROPERTY', squareId, price });
+        }
+        actions.push({ type: 'DECLINE_PURCHASE', squareId });
+      }
+      break;
+
     case 'auction':
     case 'awaiting_debt':
       // Handled by the rules that introduce these phases.

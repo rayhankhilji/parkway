@@ -1,23 +1,21 @@
-import { getSquare } from '../board/lookup';
 import { violation, type RuleViolation } from '../errors';
 import type { GameEvent } from '../events/types';
 import { err, ok, type Result } from '../result';
 import { rollDie, type RngState } from '../rng/mulberry32';
 import type { DiceRoll, GameState, PlayerId } from '../state/types';
-import { activePlayerId, boardOf, diceTotal, getPlayer, isDouble } from '../state/selectors';
+import { activePlayerId, boardOf, diceTotal, isDouble } from '../state/selectors';
 import { advanceBy, sendToJail } from '../rules/movement';
+import { resolveSquare } from '../rules/resolveSquare';
+import { phaseAfterObligations, type PhaseResult } from './turnFlow';
 
-export type PhaseResult = {
-  readonly state: GameState;
-  readonly events: readonly GameEvent[];
-};
+export type { PhaseResult };
 
 /**
- * Rolls the dice from the state's own generator and returns the new state.
+ * Rolls the dice from the state's own generator.
  *
- * Shared with the jail handler, which rolls under different rules but from the
- * same generator — the sequence of numbers a game produces must not depend on
- * why a player was rolling.
+ * Shared with the gaol handler, which rolls under different rules but from the
+ * same generator — the sequence of numbers a game produces must not depend on why
+ * a player happened to be rolling.
  */
 export function drawDice(state: GameState): { roll: DiceRoll; rng: RngState } {
   const pack = boardOf(state);
@@ -31,9 +29,10 @@ export function drawDice(state: GameState): { roll: DiceRoll; rng: RngState } {
  *
  * The awkward rule is the third double. It sends the player to the gaol with no
  * movement at all and no resolution of whatever the third roll would have landed
- * on — the roll is counted, and then discarded (→ PRD F4). Implementations get
- * this wrong by moving first and jailing afterwards, which changes the game
- * whenever the third roll would have landed somewhere consequential.
+ * on — the roll is counted, then discarded (→ PRD F4). Implementations get this
+ * wrong by moving first and jailing afterwards, which produces the right final
+ * square and the wrong everything else: salary collected on the way, and a square
+ * resolved that should never have been reached.
  */
 export function handleRollDice(state: GameState): Result<PhaseResult, RuleViolation> {
   if (state.phase.kind !== 'awaiting_roll') {
@@ -43,6 +42,8 @@ export function handleRollDice(state: GameState): Result<PhaseResult, RuleViolat
   const playerId = activePlayerId(state);
   const { roll, rng } = drawDice(state);
   const double = isDouble(roll);
+  // Reset to zero on a plain roll. That is what lets a non-zero count mean "the
+  // last roll was a double", which turnFlow reads to decide on the extra roll.
   const doublesCount = double ? state.turn.doublesCount + 1 : 0;
 
   const events: GameEvent[] = [{ type: 'DICE_ROLLED', playerId, dice: roll, isDouble: double }];
@@ -64,39 +65,32 @@ export function handleRollDice(state: GameState): Result<PhaseResult, RuleViolat
   const moved = advanceBy(rolled, playerId, diceTotal(roll));
   events.push(...moved.events);
 
-  return ok(resolveLanding(moved.state, playerId, events, { grantsAnotherRoll: double }));
+  return ok(landAndContinue(moved.state, playerId, events, roll));
 }
 
 /**
- * What happens once a token has come to rest.
+ * Resolves the square a token has come to rest on, then decides where the turn
+ * goes.
  *
- * Only the go-to-gaol square acts at this stage; purchases, rent, tax and cards
- * arrive with the rules that own them. The square's effect is applied first,
- * because being jailed cancels an extra roll that doubles would otherwise have
- * granted.
+ * If the square halted the game — a purchase to decide, a debt to settle, a trip
+ * to the gaol — the phase it set is left alone. Otherwise the turn continues, and
+ * whether that means another roll is turnFlow's call.
  */
-export function resolveLanding(
+export function landAndContinue(
   state: GameState,
   playerId: PlayerId,
   events: readonly GameEvent[],
-  options: { readonly grantsAnotherRoll: boolean },
+  causingRoll: DiceRoll | null,
 ): PhaseResult {
-  const pack = boardOf(state);
-  const square = getSquare(pack, getPlayer(state, playerId).position);
+  const landing = resolveSquare(state, playerId, { causingRoll, depth: 0, viaCard: false });
+  const combined = [...events, ...landing.events];
 
-  if (square.kind === 'go_to_jail') {
-    const jailed = sendToJail(state, playerId, 'square');
-    return {
-      state: { ...jailed.state, phase: { kind: 'awaiting_end_turn' } },
-      events: [...events, ...jailed.events],
-    };
+  if (landing.halted) {
+    return { state: landing.state, events: combined };
   }
 
   return {
-    state: {
-      ...state,
-      phase: options.grantsAnotherRoll ? { kind: 'awaiting_roll' } : { kind: 'awaiting_end_turn' },
-    },
-    events,
+    state: { ...landing.state, phase: phaseAfterObligations(landing.state) },
+    events: combined,
   };
 }

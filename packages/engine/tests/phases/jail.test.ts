@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { getBoardPack } from '../../src/board/registry';
-import { getLegalActions } from '../../src/legalActions';
 import { reduce } from '../../src/reduce';
 import { expectOk } from '../../src/result';
 import type { GameState } from '../../src/state/types';
 import { buildState, type BuildStateOptions } from '../helpers/buildState';
+import { declineAnyPurchase } from '../helpers/play';
 
 const pack = getBoardPack('parkway-classic');
 
@@ -85,9 +85,11 @@ describe('rolling for release', () => {
 
   it('grants no extra roll for the double that freed them', () => {
     const result = rollForJail(jailed({ seed: doubleSeed }));
-    expect(result.state.phase.kind).toBe('awaiting_end_turn');
+    // The turn may pause on whatever they landed on, so the assertion is about
+    // the rule — no further roll is owed — rather than the exact phase.
     expect(result.state.turn.doublesCount).toBe(0);
-    expect(getLegalActions(result.state, 'ada').map((action) => action.type)).toEqual(['END_TURN']);
+    expect(result.state.phase.kind).not.toBe('awaiting_roll');
+    expect(declineAnyPurchase(result.state).phase.kind).toBe('awaiting_end_turn');
   });
 
   it('counts a failed attempt and ends the turn', () => {
@@ -129,7 +131,8 @@ describe('the final attempt', () => {
     expect(player?.inJail).toBe(false);
     expect(player?.cash).toBe(500 - pack.jail.fine);
     expect(player?.position).toBe(pack.jail.squareId + roll[0] + roll[1]);
-    expect(result.state.phase.kind).toBe('awaiting_end_turn');
+    expect(result.state.turn.doublesCount).toBe(0);
+    expect(result.state.phase.kind).not.toBe('awaiting_roll');
   });
 
   it('reports the release as forced rather than chosen', () => {
@@ -154,6 +157,7 @@ describe('the final attempt', () => {
       creditorId: null,
       amount: pack.jail.fine,
       interrupted: { kind: 'awaiting_end_turn' },
+      remaining: [],
     });
     // The fine is owed, not taken: cash is untouched and they have not moved.
     expect(result.state.players['ada']?.cash).toBe(10);

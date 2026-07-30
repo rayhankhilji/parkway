@@ -5,7 +5,8 @@ import type { GameState } from '../state/types';
 import { activePlayerId, boardOf, diceTotal, getPlayer, isDouble } from '../state/selectors';
 import { advanceBy } from '../rules/movement';
 import { payOrEnterDebt } from '../rules/payment';
-import { drawDice, resolveLanding, type PhaseResult } from './roll';
+import { drawDice, landAndContinue } from './roll';
+import type { PhaseResult } from './turnFlow';
 
 /**
  * Trying to roll your way out of the gaol.
@@ -48,9 +49,12 @@ export function handleRollForJail(state: GameState): Result<PhaseResult, RuleVio
     const released = releaseFromJail(rolled, playerId, 'doubles');
     const moved = advanceBy(released.state, playerId, diceTotal(roll));
     return ok(
-      resolveLanding(moved.state, playerId, [...events, ...released.events, ...moved.events], {
-        grantsAnotherRoll: false,
-      }),
+      landAndContinue(
+        moved.state,
+        playerId,
+        [...events, ...released.events, ...moved.events],
+        roll,
+      ),
     );
   }
 
@@ -81,9 +85,7 @@ export function handleRollForJail(state: GameState): Result<PhaseResult, RuleVio
   const released = releaseFromJail(payment.state, playerId, 'forced_fine');
   const moved = advanceBy(released.state, playerId, diceTotal(roll));
   return ok(
-    resolveLanding(moved.state, playerId, [...events, ...released.events, ...moved.events], {
-      grantsAnotherRoll: false,
-    }),
+    landAndContinue(moved.state, playerId, [...events, ...released.events, ...moved.events], roll),
   );
 }
 

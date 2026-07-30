@@ -111,6 +111,23 @@ export type Phase =
       readonly amount: number;
       /** The phase to restore once the debt is settled or the debtor is out. */
       readonly interrupted: TurnPhase;
+      /**
+       * Obligations still outstanding once this debt clears, in the order they
+       * were created.
+       *
+       * One card can create several payments at once — "pay every other player
+       * £50" makes four, and "collect £10 from every other player" makes four with
+       * a *different debtor* each. If the second of four cannot be covered, the
+       * remaining two have to survive the debt, or settling would quietly cancel
+       * money owed by or to players who had nothing to do with the shortfall.
+       *
+       * The debtor is named per obligation for exactly that reason.
+       */
+      readonly remaining: readonly {
+        readonly debtorId: PlayerId;
+        readonly creditorId: PlayerId | null;
+        readonly amount: number;
+      }[];
     }
   | { readonly kind: 'game_over'; readonly winnerId: PlayerId };
 

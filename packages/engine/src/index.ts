@@ -95,4 +95,18 @@ export { parseAction, parseGameConfig } from './actions/parse';
 
 export { reduce, type ReduceResult } from './reduce';
 
+export { rentFor, type RentBasis } from './rules/rent';
+
+export { resolveSquare, taxDue } from './rules/resolveSquare';
+
+export { credit, payOrEnterDebt, paySequence, type Obligation } from './rules/payment';
+
+export { advanceBy, moveToSquare, sendToJail, squareAfter } from './rules/movement';
+
+export { drawCard, cardById, deckOf, returnCardToBottom, takeCardOutOfCycle } from './cards/deck';
+
+export { applyCardEffect } from './cards/effects';
+
+export { maxCardDepth, type Landing, type LandingContext } from './rules/landing';
+
 export { getLegalActions, isActionLegal } from './legalActions';

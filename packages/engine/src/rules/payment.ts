@@ -53,12 +53,19 @@ function withdraw(state: GameState, playerId: PlayerId, amount: number): GameSta
  * a debt can be incurred by a player whose turn it is not, and the active
  * player's turn has to survive it (→ PRD F12).
  */
+export type Obligation = {
+  readonly debtorId: PlayerId;
+  readonly creditorId: PlayerId | null;
+  readonly amount: number;
+};
+
 export function payOrEnterDebt(
   state: GameState,
   payerId: PlayerId,
   creditorId: PlayerId | null,
   amount: number,
   interrupted: TurnPhase,
+  remaining: readonly Obligation[] = [],
 ): PaymentResult {
   if (amount < 0) {
     throw new Error(`payOrEnterDebt received a negative amount: ${amount}`);
@@ -73,7 +80,14 @@ export function payOrEnterDebt(
     return {
       state: {
         ...state,
-        phase: { kind: 'awaiting_debt', debtorId: payerId, creditorId, amount, interrupted },
+        phase: {
+          kind: 'awaiting_debt',
+          debtorId: payerId,
+          creditorId,
+          amount,
+          interrupted,
+          remaining,
+        },
       },
       events: [{ type: 'DEBT_INCURRED', debtorId: payerId, creditorId, amount }],
       enteredDebt: true,
@@ -91,4 +105,45 @@ export function payOrEnterDebt(
   }
 
   return { state: next, events: [], enteredDebt: false };
+}
+
+/**
+ * Works through a list of obligations, stopping at the first one that cannot be
+ * covered.
+ *
+ * Used by the card effects that touch every player at once. Stopping rather than
+ * skipping matters: the obligations that have not been met yet are handed to the
+ * debt phase, so nothing is silently forgiven because someone in the middle of the
+ * list ran out of cash.
+ */
+export function paySequence(
+  state: GameState,
+  obligations: readonly Obligation[],
+  interrupted: TurnPhase,
+): PaymentResult {
+  let current = state;
+  const events: GameEvent[] = [];
+
+  for (let index = 0; index < obligations.length; index += 1) {
+    const obligation = obligations[index];
+    if (obligation === undefined) continue;
+
+    const result = payOrEnterDebt(
+      current,
+      obligation.debtorId,
+      obligation.creditorId,
+      obligation.amount,
+      interrupted,
+      obligations.slice(index + 1),
+    );
+
+    current = result.state;
+    events.push(...result.events);
+
+    if (result.enteredDebt) {
+      return { state: current, events, enteredDebt: true };
+    }
+  }
+
+  return { state: current, events, enteredDebt: false };
 }

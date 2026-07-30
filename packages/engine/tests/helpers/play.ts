@@ -82,23 +82,32 @@ export function step(action: Action, options: Omit<Step, 'action'> = {}): Step {
  * not a bot: it makes no choices, it takes what it is given, which is exactly
  * what makes it useful for asserting that the loop never stalls.
  */
-export function playForward(
-  state: GameState,
-  maxActions: number,
-): { state: GameState; events: readonly GameEvent[]; actions: number } {
+export type ForwardResult = {
+  readonly state: GameState;
+  readonly events: readonly GameEvent[];
+  readonly actions: number;
+  /**
+   * Why it stopped. `blocked` means the active player was offered nothing, which
+   * during the build means the game reached a phase whose actions do not exist
+   * yet — worth reporting rather than silently treating as a finished run.
+   */
+  readonly stopped: 'limit' | 'game_over' | 'blocked';
+};
+
+export function playForward(state: GameState, maxActions: number): ForwardResult {
   let current = state;
   const events: GameEvent[] = [];
 
   for (let count = 0; count < maxActions; count += 1) {
     if (current.phase.kind === 'game_over') {
-      return { state: current, events, actions: count };
+      return { state: current, events, actions: count, stopped: 'game_over' };
     }
 
     const playerId = activePlayerId(current);
     const legal = getLegalActions(current, playerId);
     const next = legal[0];
     if (next === undefined) {
-      return { state: current, events, actions: count };
+      return { state: current, events, actions: count, stopped: 'blocked' };
     }
 
     const result = reduce(current, toAction(next.type), { playerId, now: 0 });
@@ -112,7 +121,47 @@ export function playForward(
     events.push(...result.value.events);
   }
 
-  return { state: current, events, actions: maxActions };
+  return { state: current, events, actions: maxActions, stopped: 'limit' };
+}
+
+/**
+ * Clears any purchase decision by declining it, so a test about turn flow is not
+ * derailed by landing on something for sale.
+ *
+ * Declining rather than buying keeps the board empty, which means no rent is
+ * charged either — the point is to isolate movement and phase handling from
+ * everything a square might do.
+ */
+export function declineAnyPurchase(state: GameState): GameState {
+  let current = state;
+  for (let guard = 0; guard < 8; guard += 1) {
+    if (current.phase.kind !== 'awaiting_purchase') return current;
+    const result = reduce(
+      current,
+      { type: 'DECLINE_PURCHASE' },
+      { playerId: activePlayerId(current), now: 0 },
+    );
+    if (!result.ok) {
+      throw new Error(`Declining a purchase was refused: ${result.error.code}`);
+    }
+    current = result.value.state;
+  }
+  throw new Error('Purchases kept appearing; something is not advancing');
+}
+
+/** Rolls, then clears whatever the landing asked for. Returns the settled state. */
+export function rollAndSettle(state: GameState, playerId?: PlayerId): GameState {
+  const actor = playerId ?? activePlayerId(state);
+  const action: Action =
+    state.phase.kind === 'awaiting_jail_decision'
+      ? { type: 'ROLL_FOR_JAIL' }
+      : { type: 'ROLL_DICE' };
+
+  const result = reduce(state, action, { playerId: actor, now: 0 });
+  if (!result.ok) {
+    throw new Error(`${action.type} was refused: ${result.error.code}`);
+  }
+  return declineAnyPurchase(result.value.state);
 }
 
 function toAction(type: string): Action {
@@ -123,6 +172,10 @@ function toAction(type: string): Action {
       return { type: 'ROLL_FOR_JAIL' };
     case 'END_TURN':
       return { type: 'END_TURN' };
+    case 'BUY_PROPERTY':
+      return { type: 'BUY_PROPERTY' };
+    case 'DECLINE_PURCHASE':
+      return { type: 'DECLINE_PURCHASE' };
     default:
       throw new Error(`playForward does not know how to build a ${type} action`);
   }

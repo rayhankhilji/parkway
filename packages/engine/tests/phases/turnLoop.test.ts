@@ -6,7 +6,14 @@ import { expectOk } from '../../src/result';
 import type { GameEvent } from '../../src/events/types';
 import type { GameState } from '../../src/state/types';
 import { buildState } from '../helpers/buildState';
-import { play, playForward, ScriptFailure, step } from '../helpers/play';
+import {
+  declineAnyPurchase,
+  play,
+  playForward,
+  rollAndSettle,
+  ScriptFailure,
+  step,
+} from '../helpers/play';
 
 const pack = getBoardPack('parkway-classic');
 
@@ -48,8 +55,8 @@ function seedWithThreeDoubles(): number {
       if (state.phase.kind !== 'awaiting_roll') break;
       const result = reduce(state, { type: 'ROLL_DICE' }, { playerId: 'ada', now: 0 });
       if (!result.ok) break;
-      state = result.value.state;
       const event = result.value.events.find((candidate) => candidate.type === 'DICE_ROLLED');
+      state = declineAnyPurchase(result.value.state);
       if (event?.type !== 'DICE_ROLLED' || event.dice[0] !== event.dice[1]) break;
       doubles += 1;
     }
@@ -65,10 +72,7 @@ function rollOutTurn(state: GameState, playerId = 'ada'): GameState {
   let current = state;
   for (let guard = 0; guard < 20; guard += 1) {
     if (current.phase.kind !== 'awaiting_roll') return current;
-    current = expectOk(
-      reduce(current, { type: 'ROLL_DICE' }, { playerId, now: 0 }),
-      'roll should be legal',
-    ).state;
+    current = rollAndSettle(current, playerId);
   }
   throw new Error('Turn never ended');
 }
@@ -95,8 +99,7 @@ describe('rolling', () => {
   });
 
   it('refuses a second roll after a plain roll', () => {
-    const state = buildState({ seed: plainSeed });
-    const { state: rolled } = play(state, [step({ type: 'ROLL_DICE' })]);
+    const rolled = rollAndSettle(buildState({ seed: plainSeed }));
     const result = reduce(rolled, { type: 'ROLL_DICE' }, { playerId: 'ada', now: 0 });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('WRONG_PHASE');
@@ -118,54 +121,47 @@ describe('rolling', () => {
 
   it('pays no salary for a move that does not reach the start square', () => {
     const state = buildState({ players: { ada: { position: 1, cash: 0 } }, seed: plainSeed });
-    const { state: after, events } = play(state, [step({ type: 'ROLL_DICE' })]);
-    expect(after.players['ada']?.cash).toBe(0);
-    expect(events.some((event) => event.type === 'SALARY_PAID')).toBe(false);
+    const { events } = play(state, [step({ type: 'ROLL_DICE' })]);
+    // Asserted on the move rather than on the cash: a card drawn at the
+    // destination may legitimately move the player again and collect on the way.
+    const moves = events.filter((event) => event.type === 'TOKEN_MOVED');
+    expect(moves[0]).toMatchObject({ from: 1, passedStart: false });
   });
 });
 
 describe('doubles', () => {
   /** PRD F4 — doubles grant exactly one extra roll each. */
-  it('grants another roll after a double', () => {
+  it('grants another roll after a double, once the landing is settled', () => {
+    // PRD F4 says the extra roll comes *after the turn's obligations are
+    // settled*, so the interesting case is a double that lands on something
+    // needing a decision. Declining it must still leave the roll owed.
     const state = buildState({ seed: doubleSeed });
     const { state: after } = play(state, [step({ type: 'ROLL_DICE' })]);
-    expect(after.phase.kind).toBe('awaiting_roll');
     expect(after.turn.doublesCount).toBe(1);
-    expect(getLegalActions(after, 'ada').map((action) => action.type)).toEqual(['ROLL_DICE']);
+
+    const settled = declineAnyPurchase(after);
+    expect(settled.phase.kind).toBe('awaiting_roll');
+    expect(getLegalActions(settled, 'ada').map((action) => action.type)).toEqual(['ROLL_DICE']);
   });
 
   /** PRD F4 — a double then a non-double is two rolls and no more. */
   it('ends the turn after a double followed by a plain roll', () => {
-    let state = buildState({ seed: doubleSeed });
-    const first = expectOk(
-      reduce(state, { type: 'ROLL_DICE' }, { playerId: 'ada', now: 0 }),
-      'first roll',
-    );
-    state = first.state;
+    let state = rollAndSettle(buildState({ seed: doubleSeed }));
     expect(state.phase.kind).toBe('awaiting_roll');
 
     // Keep rolling until a plain roll turns up, then check the turn is over.
     let rolls = 1;
     while (state.phase.kind === 'awaiting_roll' && rolls < 20) {
-      const next = expectOk(
-        reduce(state, { type: 'ROLL_DICE' }, { playerId: 'ada', now: 0 }),
-        'later roll',
-      );
-      state = next.state;
+      state = rollAndSettle(state);
       rolls += 1;
-      if (state.phase.kind !== 'awaiting_roll') break;
     }
 
     expect(state.phase.kind).toBe('awaiting_end_turn');
     expect(getLegalActions(state, 'ada').map((action) => action.type)).toEqual(['END_TURN']);
   });
 
-  it('resets the doubles count when the turn ends', () => {
-    const state = buildState({ seed: doubleSeed });
-    const { state: after } = play(state, [
-      step({ type: 'ROLL_DICE' }),
-      ...Array.from({ length: 0 }, () => step({ type: 'ROLL_DICE' })),
-    ]);
+  it('counts each double as it is rolled', () => {
+    const after = rollAndSettle(buildState({ seed: doubleSeed }));
     expect(after.turn.doublesCount).toBe(1);
   });
 });
@@ -181,14 +177,8 @@ describe('three doubles', () => {
     const opening = buildState({ seed: tripleDoubleSeed });
 
     // Two doubles in, the player has moved twice and is still on the board.
-    let state = expectOk(
-      reduce(opening, { type: 'ROLL_DICE' }, { playerId: 'ada', now: 0 }),
-      'first roll',
-    ).state;
-    state = expectOk(
-      reduce(state, { type: 'ROLL_DICE' }, { playerId: 'ada', now: 0 }),
-      'second roll',
-    ).state;
+    let state = rollAndSettle(opening);
+    state = rollAndSettle(state);
 
     const positionBeforeThird = state.players['ada']?.position ?? -1;
     expect(state.turn.doublesCount).toBe(2);
@@ -224,14 +214,8 @@ describe('three doubles', () => {
       seed: tripleDoubleSeed,
     });
 
-    let state = expectOk(
-      reduce(opening, { type: 'ROLL_DICE' }, { playerId: 'ada', now: 0 }),
-      'first roll',
-    ).state;
-    state = expectOk(
-      reduce(state, { type: 'ROLL_DICE' }, { playerId: 'ada', now: 0 }),
-      'second roll',
-    ).state;
+    let state = rollAndSettle(opening);
+    state = rollAndSettle(state);
 
     const cashBeforeThird = state.players['ada']?.cash ?? 0;
     const third = expectOk(
@@ -302,7 +286,7 @@ describe('the go-to-gaol square', () => {
 describe('ending a turn', () => {
   it('passes play to the next player and clears the turn counters', () => {
     const state = buildState({ playerIds: ['ada', 'bo'], seed: plainSeed });
-    const { state: after } = play(state, [step({ type: 'ROLL_DICE' }), step({ type: 'END_TURN' })]);
+    const { state: after } = play(rollAndSettle(state), [step({ type: 'END_TURN' })]);
     expect(after.activeIndex).toBe(1);
     expect(after.phase.kind).toBe('awaiting_roll');
     expect(after.turn).toEqual({ doublesCount: 0, hasRolled: false, lastRoll: null });
@@ -310,8 +294,7 @@ describe('ending a turn', () => {
 
   it('wraps back to the first player', () => {
     const state = buildState({ playerIds: ['ada', 'bo'], activeIndex: 1, seed: plainSeed });
-    const { state: after } = play(state, [
-      step({ type: 'ROLL_DICE', ...{} }, { by: 'bo' }),
+    const { state: after } = play(rollAndSettle(state, 'bo'), [
       step({ type: 'END_TURN' }, { by: 'bo' }),
     ]);
     expect(after.activeIndex).toBe(0);
@@ -323,7 +306,7 @@ describe('ending a turn', () => {
       players: { bo: { bankrupt: true } },
       seed: plainSeed,
     });
-    const { state: after } = play(state, [step({ type: 'ROLL_DICE' }), step({ type: 'END_TURN' })]);
+    const { state: after } = play(rollAndSettle(state), [step({ type: 'END_TURN' })]);
     expect(after.turnOrder).toEqual(['ada', 'bo', 'cy']);
     expect(after.activeIndex).toBe(2);
   });
@@ -334,7 +317,7 @@ describe('ending a turn', () => {
       players: { bo: { inJail: true, position: pack.jail.squareId } },
       seed: plainSeed,
     });
-    const { state: after } = play(state, [step({ type: 'ROLL_DICE' }), step({ type: 'END_TURN' })]);
+    const { state: after } = play(rollAndSettle(state), [step({ type: 'END_TURN' })]);
     expect(after.phase.kind).toBe('awaiting_jail_decision');
     expect(getLegalActions(after, 'bo').map((action) => action.type)).toEqual(['ROLL_FOR_JAIL']);
   });
@@ -416,27 +399,27 @@ describe('a long scripted run', () => {
       seed: state.rng.seed,
     }).toMatchInlineSnapshot(`
       {
-        "activeIndex": 2,
+        "activeIndex": 0,
         "cash": [
-          2250,
-          2100,
-          2250,
-          2100,
+          211,
+          817,
+          1058,
+          1084,
         ],
         "jailed": [
           false,
           false,
           false,
-          true,
+          false,
         ],
         "phase": "awaiting_roll",
         "positions": [
-          12,
-          28,
-          5,
-          10,
+          34,
+          24,
+          25,
+          18,
         ],
-        "seed": 3532781061,
+        "seed": 125414223,
       }
     `);
   });
@@ -449,10 +432,17 @@ describe('a long scripted run', () => {
     expect(diceOf(second.events)).toEqual(diceOf(first.events));
   });
 
-  it('never stalls: every action is answered by another legal action', () => {
+  it('runs until somebody genuinely cannot pay', () => {
+    // Taking the first action offered means buying everything landed on, so a
+    // player runs out of cash and then out of luck. The run stopping in
+    // awaiting_debt is the correct outcome: rent is being charged and settlement
+    // is not built yet. When it is, this should run to a winner instead.
     const opening = buildState({ playerIds: ['ada', 'bo'], seed: 4242 });
-    const { actions } = playForward(opening, 500);
-    expect(actions).toBe(500);
+    const result = playForward(opening, 500);
+
+    expect(result.stopped).toBe('blocked');
+    expect(result.state.phase.kind).toBe('awaiting_debt');
+    expect(result.actions).toBeGreaterThan(50);
   });
 
   it('keeps every player on a real square and out of debt for salary alone', () => {
