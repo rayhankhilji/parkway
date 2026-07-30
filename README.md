@@ -56,17 +56,17 @@ pnpm lint
 
 ## Progress
 
-| Stage | What it covers                                                                       | State       |
-| ----- | ------------------------------------------------------------------------------------ | ----------- |
-| 1     | Workspace, tooling, design tokens                                                    | done        |
-| 2     | Engine foundations: state, board pack, seeded RNG, test harness                      | done        |
-| 3     | Turn loop, headless                                                                  | done        |
-| 4     | Database, server routes, live multiplayer                                            | not started |
-| 5     | Board and shell UI                                                                   | not started |
-| 6     | Rules: buying, rent, cards, jail, auctions, building, mortgages, trading, bankruptcy | not started |
-| 7     | Fuzz and replay hardening                                                            | not started |
-| 8     | Design and accessibility pass                                                        | not started |
-| 9     | Deployment                                                                           | not started |
+| Stage | What it covers                                                                       | State                                                           |
+| ----- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| 1     | Workspace, tooling, design tokens                                                    | done                                                            |
+| 2     | Engine foundations: state, board pack, seeded RNG, test harness                      | done                                                            |
+| 3     | Turn loop, headless                                                                  | done                                                            |
+| 4     | Database, server routes, live multiplayer                                            | code complete, checkpoint unverified — needs a Supabase project |
+| 5     | Board and shell UI                                                                   | in progress                                                     |
+| 6     | Rules: buying, rent, cards, jail, auctions, building, mortgages, trading, bankruptcy | not started                                                     |
+| 7     | Fuzz and replay hardening                                                            | not started                                                     |
+| 8     | Design and accessibility pass                                                        | not started                                                     |
+| 9     | Deployment                                                                           | not started                                                     |
 
 Each stage ends in something you can actually run, and is tagged with release notes describing what changed.
 

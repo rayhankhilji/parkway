@@ -1,16 +1,26 @@
+import { LandingForms } from '@/components/LandingForms';
+import { SmallScreenNotice } from '@/components/SmallScreenNotice';
+
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-lg border border-border bg-surface p-8">
-        <h1 className="text-2xl font-semibold">Parkway</h1>
-        <p className="mt-3 text-base text-text-muted">
-          A property-trading board game for you and up to five friends. Create a game, share the
-          room code, play in the browser.
+    <>
+      <SmallScreenNotice />
+
+      <main className="hidden min-h-screen flex-col items-center justify-center gap-8 p-6 md:flex">
+        <header className="text-center">
+          <h1 className="text-2xl font-semibold">Parkway</h1>
+          <p className="mt-2 max-w-sm text-base text-text-muted">
+            A property-trading board game for two to six friends. Share the room code, play in the
+            browser. No accounts.
+          </p>
+        </header>
+
+        <LandingForms />
+
+        <p className="text-sm text-text-faint">
+          Your seat is kept in this browser. Clear its storage and you lose the seat.
         </p>
-        <p className="mt-6 text-sm text-text-faint">
-          Creating and joining games arrives with the lobby.
-        </p>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
