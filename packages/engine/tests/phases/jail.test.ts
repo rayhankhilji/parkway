@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getBoardPack } from '../../src/board/registry';
+import { getLegalActions } from '../../src/legalActions';
 import { reduce } from '../../src/reduce';
 import { expectOk } from '../../src/result';
 import type { GameState } from '../../src/state/types';
@@ -201,5 +202,127 @@ describe('a full sentence', () => {
     expect(attempts.slice(0, 2)).toEqual([1, 2]);
     expect(state.players['ada']?.inJail).toBe(false);
     expect(state.players['ada']?.cash).toBe(500 - pack.jail.fine);
+  });
+});
+
+describe('paying the fine', () => {
+  /** PRD F9 — a jailed player may pay and then roll as normal. */
+  it('releases the player and hands them a normal roll', () => {
+    const result = expectOk(
+      reduce(jailed(), { type: 'PAY_JAIL_FINE' }, { playerId: 'ada', now: 0 }),
+      'paying the fine should be legal',
+    );
+
+    expect(result.state.players['ada']?.inJail).toBe(false);
+    expect(result.state.players['ada']?.cash).toBe(1500 - pack.jail.fine);
+    // Not a roll, but the thing you do before one.
+    expect(result.state.phase.kind).toBe('awaiting_roll');
+    expect(result.events).toEqual([{ type: 'LEFT_JAIL', playerId: 'ada', method: 'fine' }]);
+  });
+
+  it('leaves the player on the gaol square until they roll', () => {
+    const result = expectOk(
+      reduce(jailed(), { type: 'PAY_JAIL_FINE' }, { playerId: 'ada', now: 0 }),
+      'paying the fine should be legal',
+    );
+    expect(result.state.players['ada']?.position).toBe(pack.jail.squareId);
+  });
+
+  it('refuses the fine when they cannot afford it, and is not offered', () => {
+    const state = jailed({ players: { ada: { cash: 10 } } });
+    const result = reduce(state, { type: 'PAY_JAIL_FINE' }, { playerId: 'ada', now: 0 });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe('INSUFFICIENT_FUNDS');
+    expect(getLegalActions(state, 'ada').map((action) => action.type)).toEqual(['ROLL_FOR_JAIL']);
+  });
+
+  it('feeds the pot when that variant is on', () => {
+    const state = jailed({ config: { freeParkingPot: true } });
+    const result = expectOk(
+      reduce(state, { type: 'PAY_JAIL_FINE' }, { playerId: 'ada', now: 0 }),
+      'paying the fine should be legal',
+    );
+    expect(result.state.pot).toBe(pack.jail.fine);
+  });
+
+  it('refuses the fine from a player who is not in the gaol', () => {
+    const result = reduce(buildState(), { type: 'PAY_JAIL_FINE' }, { playerId: 'ada', now: 0 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe('WRONG_PHASE');
+  });
+});
+
+describe('using a release card', () => {
+  it('releases the player without charging them', () => {
+    const state = jailed({ players: { ada: { heldJailCards: ['chance'] } } });
+    const result = expectOk(
+      reduce(state, { type: 'USE_JAIL_CARD' }, { playerId: 'ada', now: 0 }),
+      'using the card should be legal',
+    );
+
+    expect(result.state.players['ada']?.inJail).toBe(false);
+    expect(result.state.players['ada']?.cash).toBe(1500);
+    expect(result.state.players['ada']?.heldJailCards).toEqual([]);
+    expect(result.state.phase.kind).toBe('awaiting_roll');
+    expect(result.events).toEqual([{ type: 'LEFT_JAIL', playerId: 'ada', method: 'card' }]);
+  });
+
+  /** PRD F10 — a spent card returns to the bottom of its own deck. */
+  it('returns the card to the bottom of the deck it came from', () => {
+    const releaseId = 'chance-08';
+    const state = jailed({
+      players: { ada: { heldJailCards: ['chance'] } },
+      decks: { chance: ['chance-01', 'chance-02'] },
+    });
+    const result = expectOk(
+      reduce(state, { type: 'USE_JAIL_CARD' }, { playerId: 'ada', now: 0 }),
+      'using the card should be legal',
+    );
+
+    const order = result.state.decks.chance.order;
+    expect(order[order.length - 1]).toBe(releaseId);
+    expect(result.state.decks.chest.order).toEqual(pack.decks.chest.map((card) => card.id));
+  });
+
+  it('spends the right deck when the player holds a civic card', () => {
+    const state = jailed({
+      players: { ada: { heldJailCards: ['chest'] } },
+      decks: { chest: ['chest-01', 'chest-05'] },
+    });
+    const result = expectOk(
+      reduce(state, { type: 'USE_JAIL_CARD' }, { playerId: 'ada', now: 0 }),
+      'using the card should be legal',
+    );
+    // chest-05 was removed on build because Ada holds it, and goes to the bottom.
+    expect(result.state.decks.chest.order).toEqual(['chest-01', 'chest-05']);
+  });
+
+  it('spends one card and keeps the other when the player holds both', () => {
+    const state = jailed({ players: { ada: { heldJailCards: ['chance', 'chest'] } } });
+    const result = expectOk(
+      reduce(state, { type: 'USE_JAIL_CARD' }, { playerId: 'ada', now: 0 }),
+      'using the card should be legal',
+    );
+    expect(result.state.players['ada']?.heldJailCards).toEqual(['chest']);
+  });
+
+  it('refuses when the player holds no card, and is not offered', () => {
+    const state = jailed();
+    const result = reduce(state, { type: 'USE_JAIL_CARD' }, { playerId: 'ada', now: 0 });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe('NO_JAIL_CARD');
+    expect(getLegalActions(state, 'ada').map((action) => action.type)).not.toContain(
+      'USE_JAIL_CARD',
+    );
+  });
+
+  it('is offered ahead of the fine, since it costs nothing', () => {
+    const state = jailed({ players: { ada: { heldJailCards: ['chance'] } } });
+    expect(getLegalActions(state, 'ada').map((action) => action.type)).toEqual([
+      'USE_JAIL_CARD',
+      'PAY_JAIL_FINE',
+      'ROLL_FOR_JAIL',
+    ]);
   });
 });

@@ -110,3 +110,5 @@ export { applyCardEffect } from './cards/effects';
 export { maxCardDepth, type Landing, type LandingContext } from './rules/landing';
 
 export { getLegalActions, isActionLegal } from './legalActions';
+
+export { minimumBid, openAuction, auctionInProgress } from './phases/auction';

@@ -2,6 +2,7 @@ import { violation, type RuleViolation } from '../errors';
 import type { GameEvent } from '../events/types';
 import { err, ok, type Result } from '../result';
 import { rollDie, type RngState } from '../rng/mulberry32';
+import type { ActionMeta } from '../actions/types';
 import type { DiceRoll, GameState, PlayerId } from '../state/types';
 import { activePlayerId, boardOf, diceTotal, isDouble } from '../state/selectors';
 import { advanceBy, sendToJail } from '../rules/movement';
@@ -34,7 +35,10 @@ export function drawDice(state: GameState): { roll: DiceRoll; rng: RngState } {
  * square and the wrong everything else: salary collected on the way, and a square
  * resolved that should never have been reached.
  */
-export function handleRollDice(state: GameState): Result<PhaseResult, RuleViolation> {
+export function handleRollDice(
+  state: GameState,
+  meta: ActionMeta,
+): Result<PhaseResult, RuleViolation> {
   if (state.phase.kind !== 'awaiting_roll') {
     return err(violation('WRONG_PHASE', 'You cannot roll right now.'));
   }
@@ -65,7 +69,7 @@ export function handleRollDice(state: GameState): Result<PhaseResult, RuleViolat
   const moved = advanceBy(rolled, playerId, diceTotal(roll));
   events.push(...moved.events);
 
-  return ok(landAndContinue(moved.state, playerId, events, roll));
+  return ok(landAndContinue(moved.state, playerId, events, roll, meta));
 }
 
 /**
@@ -81,8 +85,14 @@ export function landAndContinue(
   playerId: PlayerId,
   events: readonly GameEvent[],
   causingRoll: DiceRoll | null,
+  meta: ActionMeta,
 ): PhaseResult {
-  const landing = resolveSquare(state, playerId, { causingRoll, depth: 0, viaCard: false });
+  const landing = resolveSquare(state, playerId, {
+    causingRoll,
+    depth: 0,
+    viaCard: false,
+    now: meta.now,
+  });
   const combined = [...events, ...landing.events];
 
   if (landing.halted) {

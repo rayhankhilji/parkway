@@ -5,6 +5,8 @@ import { err, ok, type Result } from '../result';
 import type { GameState } from '../state/types';
 import { activePlayerId, boardOf, getDeed, getPlayer } from '../state/selectors';
 import { payOrEnterDebt } from '../rules/payment';
+import type { ActionMeta } from '../actions/types';
+import { openAuction } from './auction';
 import { concludeObligation, type PhaseResult } from './turnFlow';
 
 /**
@@ -59,20 +61,28 @@ export function handleBuyProperty(state: GameState): Result<PhaseResult, RuleVio
 /**
  * Declining.
  *
- * With the auction variant on, the deed should go under the hammer — that is
- * PRD F6, and it arrives with the auction phase. Until then the square simply
- * stays unowned and play continues, which is the behaviour the variant describes
- * when it is switched off.
+ * With the auction variant on the lot goes under the hammer, and the player who
+ * just declined it may bid — F8 is explicit about that, and it is what makes
+ * declining a real decision rather than simply passing the property along.
+ *
+ * With the variant off the square stays unowned and play continues.
  */
-export function handleDeclinePurchase(state: GameState): Result<PhaseResult, RuleViolation> {
+export function handleDeclinePurchase(
+  state: GameState,
+  meta: ActionMeta,
+): Result<PhaseResult, RuleViolation> {
   if (state.phase.kind !== 'awaiting_purchase') {
     return err(violation('WRONG_PHASE', 'There is nothing to decline right now.'));
   }
 
   const playerId = activePlayerId(state);
-  const events: GameEvent[] = [
-    { type: 'PURCHASE_DECLINED', playerId, squareId: state.phase.squareId },
-  ];
+  const squareId = state.phase.squareId;
+  const events: GameEvent[] = [{ type: 'PURCHASE_DECLINED', playerId, squareId }];
 
-  return ok(concludeObligation(state, events));
+  if (!state.config.auctionOnDecline) {
+    return ok(concludeObligation(state, events));
+  }
+
+  const opened = openAuction(state, squareId, meta.now);
+  return ok({ state: opened.state, events: [...events, ...opened.events] });
 }

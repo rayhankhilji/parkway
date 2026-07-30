@@ -21,7 +21,7 @@ function standingOn(squareId: number, options: BuildStateOptions = {}): GameStat
 }
 
 function resolve(state: GameState, causingRoll: [number, number] | null = [3, 4]) {
-  return resolveSquare(state, 'ada', { causingRoll, depth: 0, viaCard: false });
+  return resolveSquare(state, 'ada', { causingRoll, depth: 0, viaCard: false, now: 0 });
 }
 
 describe('every square kind resolves', () => {

@@ -111,9 +111,14 @@ describe('buying', () => {
   });
 });
 
-describe('declining', () => {
+describe('declining with the auction variant off', () => {
+  const noAuction = { config: { auctionOnDecline: false } } as const;
+
   it('leaves the square unowned and moves the turn on', () => {
-    const result = expectOk(act(deciding(1), 'DECLINE_PURCHASE'), 'declining should be legal');
+    const result = expectOk(
+      act(deciding(1, noAuction), 'DECLINE_PURCHASE'),
+      'declining should be legal',
+    );
     expect(result.state.deeds[1]?.ownerId).toBeNull();
     expect(result.state.phase.kind).toBe('awaiting_end_turn');
     expect(result.events[0]).toEqual({
@@ -124,14 +129,47 @@ describe('declining', () => {
   });
 
   it('hands back the extra roll when the roll was a double', () => {
-    const state = deciding(1, { turn: { doublesCount: 2, hasRolled: true, lastRoll: [4, 4] } });
+    const state = deciding(1, {
+      ...noAuction,
+      turn: { doublesCount: 2, hasRolled: true, lastRoll: [4, 4] },
+    });
     const result = expectOk(act(state, 'DECLINE_PURCHASE'), 'declining should be legal');
     expect(result.state.phase.kind).toBe('awaiting_roll');
   });
 
   it('takes no money', () => {
-    const result = expectOk(act(deciding(39), 'DECLINE_PURCHASE'), 'declining should be legal');
+    const result = expectOk(
+      act(deciding(39, noAuction), 'DECLINE_PURCHASE'),
+      'declining should be legal',
+    );
     expect(result.state.players['ada']?.cash).toBe(1500);
+  });
+});
+
+describe('declining with the auction variant on', () => {
+  /** PRD F6 — declining sends the lot to auction, decliner still eligible. */
+  it('opens an auction the decliner may bid in', () => {
+    const result = expectOk(act(deciding(1), 'DECLINE_PURCHASE'), 'declining should be legal');
+    expect(result.state.phase).toMatchObject({
+      kind: 'auction',
+      squareId: 1,
+      highBid: 0,
+      highBidderId: null,
+      activeBidderIds: ['ada', 'bo'],
+    });
+    expect(result.events.map((event) => event.type)).toEqual([
+      'PURCHASE_DECLINED',
+      'AUCTION_OPENED',
+    ]);
+  });
+
+  it('sets the deadline from the server clock and the configured duration', () => {
+    const state = deciding(1, { config: { auctionSeconds: 45 } });
+    const result = expectOk(
+      reduce(state, { type: 'DECLINE_PURCHASE' }, { playerId: 'ada', now: 1_000_000 }),
+      'declining should be legal',
+    );
+    expect(result.state.phase).toMatchObject({ deadlineAt: 1_000_000 + 45_000 });
   });
 });
 

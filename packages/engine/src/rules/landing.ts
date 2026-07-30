@@ -39,6 +39,11 @@ export type LandingContext = {
    * pack's penalty rate instead of the standard one (→ PRD F10).
    */
   readonly viaCard: boolean;
+  /**
+   * The server's clock, stamped when the action was accepted. Only the auction
+   * deadline reads it; it enters as data so the reducer stays pure.
+   */
+  readonly now: number;
 };
 
 export const maxCardDepth = 8;

@@ -128,6 +128,16 @@ export type BoardPack = {
   /** Finite supply. When it runs out, building is refused (→ PRD F11). */
   readonly bank: { readonly houses: number; readonly hotels: number };
 
+  readonly auction: {
+    /**
+     * The smallest amount a new bid must beat the standing one by.
+     *
+     * Board data rather than a game setting: it belongs with the prices it is
+     * measured against, and PRD F15's list of configurable variants is fixed.
+     */
+    readonly minimumIncrement: number;
+  };
+
   readonly jail: {
     readonly squareId: SquareId;
     readonly fine: number;

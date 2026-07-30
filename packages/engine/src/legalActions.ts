@@ -1,5 +1,6 @@
 import type { LegalAction } from './actions/types';
 import type { GameState, PlayerId } from './state/types';
+import { minimumBid } from './phases/auction';
 import { activePlayerId, boardOf, findPlayer, getPlayer, priceOf } from './state/selectors';
 
 /**
@@ -36,9 +37,17 @@ export function getLegalActions(state: GameState, playerId: PlayerId): readonly 
     case 'awaiting_jail_decision':
       if (isActive) {
         const pack = boardOf(state);
+        // A held card first: it costs nothing, so offering the fine above it would
+        // be inviting a player to waste money.
+        if (player.heldJailCards.length > 0) {
+          actions.push({ type: 'USE_JAIL_CARD' });
+        }
+        if (player.cash >= pack.jail.fine) {
+          actions.push({ type: 'PAY_JAIL_FINE', fine: pack.jail.fine });
+        }
         actions.push({
           type: 'ROLL_FOR_JAIL',
-          attemptsRemaining: pack.jail.maxTurns - getPlayer(state, playerId).jailAttempts,
+          attemptsRemaining: pack.jail.maxTurns - player.jailAttempts,
         });
       }
       break;
@@ -61,9 +70,37 @@ export function getLegalActions(state: GameState, playerId: PlayerId): readonly 
       }
       break;
 
-    case 'auction':
+    case 'auction': {
+      // Any solvent player still in the running may act, whosever turn it is.
+      if (!state.phase.activeBidderIds.includes(playerId)) break;
+
+      const minimum = minimumBid(state, state.phase.highBid);
+      if (player.cash >= minimum) {
+        actions.push({
+          type: 'PLACE_BID',
+          squareId: state.phase.squareId,
+          minimum,
+          maximum: player.cash,
+        });
+      }
+      // The leading bidder has nothing to pass on.
+      if (state.phase.highBidderId !== playerId) {
+        actions.push({ type: 'PASS_BID' });
+      }
+      /*
+       * AUCTION_TIMEOUT is deliberately absent.
+       *
+       * It is not something a player chooses — it is fired by whichever client's
+       * countdown runs out first, and the deadline is already in public state for
+       * the UI to count against (→ D5). Listing it here would put a "close the
+       * auction" button in the action bar, and would offer an action the reducer
+       * refuses until the deadline actually passes.
+       */
+      break;
+    }
+
     case 'awaiting_debt':
-      // Handled by the rules that introduce these phases.
+      // Settlement arrives with the debt rules.
       break;
   }
 

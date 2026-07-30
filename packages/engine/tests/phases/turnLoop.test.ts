@@ -319,7 +319,11 @@ describe('ending a turn', () => {
     });
     const { state: after } = play(rollAndSettle(state), [step({ type: 'END_TURN' })]);
     expect(after.phase.kind).toBe('awaiting_jail_decision');
-    expect(getLegalActions(after, 'bo').map((action) => action.type)).toEqual(['ROLL_FOR_JAIL']);
+    // The fine is offered too, since Bo can afford it.
+    expect(getLegalActions(after, 'bo').map((action) => action.type)).toEqual([
+      'PAY_JAIL_FINE',
+      'ROLL_FOR_JAIL',
+    ]);
   });
 
   it('refuses to end a turn before rolling', () => {
@@ -354,8 +358,8 @@ describe('legal actions', () => {
       players: { ada: { inJail: true, jailAttempts: 1, position: pack.jail.squareId } },
       phase: { kind: 'awaiting_jail_decision' },
     });
-    const [action] = getLegalActions(state, 'ada');
-    expect(action).toEqual({ type: 'ROLL_FOR_JAIL', attemptsRemaining: 2 });
+    const rolling = getLegalActions(state, 'ada').find((action) => action.type === 'ROLL_FOR_JAIL');
+    expect(rolling).toEqual({ type: 'ROLL_FOR_JAIL', attemptsRemaining: 2 });
   });
 });
 
@@ -401,10 +405,10 @@ describe('a long scripted run', () => {
       {
         "activeIndex": 0,
         "cash": [
-          211,
-          817,
-          1058,
-          1084,
+          902,
+          588,
+          350,
+          920,
         ],
         "jailed": [
           false,
@@ -414,12 +418,12 @@ describe('a long scripted run', () => {
         ],
         "phase": "awaiting_roll",
         "positions": [
-          34,
-          24,
-          25,
-          18,
+          13,
+          1,
+          31,
+          33,
         ],
-        "seed": 125414223,
+        "seed": 2652756903,
       }
     `);
   });

@@ -3,7 +3,8 @@ import { violation, type RuleViolation } from './errors';
 import type { GameEvent } from './events/types';
 import { findPlayer, isActivePlayer } from './state/selectors';
 import { handleEndTurn } from './phases/endTurn';
-import { handleRollForJail } from './phases/jail';
+import { handleAuctionTimeout, handlePassBid, handlePlaceBid } from './phases/auction';
+import { handlePayJailFine, handleRollForJail, handleUseJailCard } from './phases/jail';
 import { handleBuyProperty, handleDeclinePurchase } from './phases/purchase';
 import { handleRollDice } from './phases/roll';
 import { err, type Result } from './result';
@@ -82,15 +83,25 @@ export function reduce(
    */
   switch (action.type) {
     case 'ROLL_DICE':
-      return handleRollDice(state);
+      return handleRollDice(state, meta);
     case 'ROLL_FOR_JAIL':
-      return handleRollForJail(state);
+      return handleRollForJail(state, meta);
+    case 'PAY_JAIL_FINE':
+      return handlePayJailFine(state);
+    case 'USE_JAIL_CARD':
+      return handleUseJailCard(state);
     case 'END_TURN':
       return handleEndTurn(state);
     case 'BUY_PROPERTY':
       return handleBuyProperty(state);
     case 'DECLINE_PURCHASE':
-      return handleDeclinePurchase(state);
+      return handleDeclinePurchase(state, meta);
+    case 'PLACE_BID':
+      return handlePlaceBid(state, meta.playerId, action.amount, meta.now);
+    case 'PASS_BID':
+      return handlePassBid(state, meta.playerId, meta.now);
+    case 'AUCTION_TIMEOUT':
+      return handleAuctionTimeout(state, meta.now);
     default:
       return err(violation('WRONG_PHASE', `You cannot ${describe(action)} right now.`));
   }

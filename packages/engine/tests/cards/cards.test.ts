@@ -23,7 +23,7 @@ function withTopCard(cardId: string, options: BuildStateOptions = {}): GameState
 }
 
 function resolve(state: GameState, causingRoll: [number, number] = [3, 4]) {
-  return resolveSquare(state, 'ada', { causingRoll, depth: 0, viaCard: false });
+  return resolveSquare(state, 'ada', { causingRoll, depth: 0, viaCard: false, now: 0 });
 }
 
 describe('the deck cycle', () => {
@@ -304,7 +304,7 @@ describe('chained cards', () => {
     // A pack whose card sends the player back onto the same card square would
     // loop forever. An error naming the pack beats a stack overflow.
     const looping = buildState({ players: { ada: { position: 7, cash: 0 } } });
-    const context = { causingRoll: [3, 4] as [number, number], depth: 99, viaCard: false };
+    const context = { causingRoll: [3, 4] as [number, number], depth: 99, viaCard: false, now: 0 };
     expect(() => resolveSquare(looping, 'ada', context)).toThrow('suggests a loop');
   });
 });

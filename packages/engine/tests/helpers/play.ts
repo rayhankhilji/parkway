@@ -1,4 +1,4 @@
-import type { Action } from '../../src/actions/types';
+import type { Action, LegalAction } from '../../src/actions/types';
 import type { RuleViolation } from '../../src/errors';
 import type { GameEvent } from '../../src/events/types';
 import { getLegalActions } from '../../src/legalActions';
@@ -103,14 +103,32 @@ export function playForward(state: GameState, maxActions: number): ForwardResult
       return { state: current, events, actions: count, stopped: 'game_over' };
     }
 
-    const playerId = activePlayerId(current);
-    const legal = getLegalActions(current, playerId);
-    const next = legal[0];
-    if (next === undefined) {
+    // During an auction the player who can act is not the turn holder, so the
+    // whole roster is asked rather than assuming whose move it is.
+    const candidates =
+      current.phase.kind === 'auction' ? current.turnOrder : [activePlayerId(current)];
+
+    let playerId: PlayerId | null = null;
+    let next: LegalAction | undefined;
+    for (const candidate of candidates) {
+      const offered = getLegalActions(current, candidate);
+      if (offered.length > 0) {
+        playerId = candidate;
+        next = offered[0];
+        break;
+      }
+    }
+
+    if (playerId === null || next === undefined) {
       return { state: current, events, actions: count, stopped: 'blocked' };
     }
 
-    const result = reduce(current, toAction(next.type), { playerId, now: 0 });
+    const action = toAction(next);
+    if (action === null) {
+      return { state: current, events, actions: count, stopped: 'blocked' };
+    }
+
+    const result = reduce(current, action, { playerId, now: 0 });
     if (!result.ok) {
       throw new Error(
         `playForward was offered ${next.type} but the reducer refused it: ${result.error.code}`,
@@ -125,28 +143,44 @@ export function playForward(state: GameState, maxActions: number): ForwardResult
 }
 
 /**
- * Clears any purchase decision by declining it, so a test about turn flow is not
- * derailed by landing on something for sale.
+ * Clears whatever a landing asked for, so a test about turn flow is not derailed
+ * by what happened to be on the square.
  *
- * Declining rather than buying keeps the board empty, which means no rent is
- * charged either — the point is to isolate movement and phase handling from
- * everything a square might do.
+ * Purchases are declined and the resulting auction is passed out by everybody, so
+ * the board stays empty and no rent is charged either. The point is to isolate
+ * movement and phase handling from everything a square might do.
  */
 export function declineAnyPurchase(state: GameState): GameState {
   let current = state;
-  for (let guard = 0; guard < 8; guard += 1) {
-    if (current.phase.kind !== 'awaiting_purchase') return current;
-    const result = reduce(
-      current,
-      { type: 'DECLINE_PURCHASE' },
-      { playerId: activePlayerId(current), now: 0 },
-    );
-    if (!result.ok) {
-      throw new Error(`Declining a purchase was refused: ${result.error.code}`);
+
+  for (let guard = 0; guard < 40; guard += 1) {
+    if (current.phase.kind === 'awaiting_purchase') {
+      current = apply(current, { type: 'DECLINE_PURCHASE' }, activePlayerId(current));
+      continue;
     }
-    current = result.value.state;
+
+    if (current.phase.kind === 'auction') {
+      const phase = current.phase;
+      const next = phase.activeBidderIds.find((id) => id !== phase.highBidderId);
+      if (next === undefined) {
+        throw new Error('An auction is stuck with nobody able to pass');
+      }
+      current = apply(current, { type: 'PASS_BID' }, next);
+      continue;
+    }
+
+    return current;
   }
-  throw new Error('Purchases kept appearing; something is not advancing');
+
+  throw new Error('Obligations kept appearing; something is not advancing');
+}
+
+function apply(state: GameState, action: Action, playerId: PlayerId): GameState {
+  const result = reduce(state, action, { playerId, now: 0 });
+  if (!result.ok) {
+    throw new Error(`${action.type} was refused: ${result.error.code} — ${result.error.message}`);
+  }
+  return result.value.state;
 }
 
 /** Rolls, then clears whatever the landing asked for. Returns the settled state. */
@@ -164,19 +198,34 @@ export function rollAndSettle(state: GameState, playerId?: PlayerId): GameState 
   return declineAnyPurchase(result.value.state);
 }
 
-function toAction(type: string): Action {
-  switch (type) {
+/**
+ * Turns an offered action into a postable one.
+ *
+ * Where a choice is involved it takes the least committal option — the minimum
+ * bid — because the point of forward play is to keep the loop moving, not to play
+ * well.
+ */
+function toAction(legal: LegalAction): Action | null {
+  switch (legal.type) {
     case 'ROLL_DICE':
       return { type: 'ROLL_DICE' };
     case 'ROLL_FOR_JAIL':
       return { type: 'ROLL_FOR_JAIL' };
+    case 'PAY_JAIL_FINE':
+      return { type: 'PAY_JAIL_FINE' };
+    case 'USE_JAIL_CARD':
+      return { type: 'USE_JAIL_CARD' };
     case 'END_TURN':
       return { type: 'END_TURN' };
     case 'BUY_PROPERTY':
       return { type: 'BUY_PROPERTY' };
     case 'DECLINE_PURCHASE':
       return { type: 'DECLINE_PURCHASE' };
+    case 'PLACE_BID':
+      return { type: 'PLACE_BID', amount: legal.minimum };
+    case 'PASS_BID':
+      return { type: 'PASS_BID' };
     default:
-      throw new Error(`playForward does not know how to build a ${type} action`);
+      return null;
   }
 }

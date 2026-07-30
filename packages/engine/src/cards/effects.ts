@@ -38,6 +38,7 @@ export function applyCardEffect(
       causingRoll: context.causingRoll,
       depth: context.depth + 1,
       viaCard,
+      now: context.now,
     });
     return {
       state: result.state,

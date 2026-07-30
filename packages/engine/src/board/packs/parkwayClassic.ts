@@ -471,6 +471,7 @@ export const parkwayClassic: BoardPack = {
   transit: { rentByCount: [25, 50, 100, 200], cardPenaltyMultiplier: 2 },
   utility: { multiplierByCount: [4, 10], cardPenaltyMultiplier: 10 },
   bank: { houses: 32, hotels: 12 },
+  auction: { minimumIncrement: 10 },
   jail: { squareId: 10, fine: 50, maxTurns: 3 },
   startSquareId: 0,
   goToJailSquareId: 30,

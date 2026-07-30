@@ -1,6 +1,6 @@
 import { isOwnable } from '../../src/board/lookup';
 import { getBoardPack } from '../../src/board/registry';
-import type { SquareId } from '../../src/board/types';
+import type { DeckId, SquareId } from '../../src/board/types';
 import { createRng } from '../../src/rng/mulberry32';
 import type {
   DeedState,
@@ -114,6 +114,36 @@ export function buildState(options: BuildStateOptions = {}): GameState {
     throw new Error(`buildState activeIndex ${activeIndex} is outside the turn order`);
   }
 
+  /**
+   * A held release card is out of its deck's cycle, so giving a player one has to
+   * take it out of the deck too.
+   *
+   * Without this a test can build a state the engine could never produce — the same
+   * card in two places at once — and then fail on an error that has nothing to do
+   * with what it was testing.
+   */
+  function deckOrder(deck: DeckId): readonly string[] {
+    const declared = options.decks?.[deck] ?? pack.decks[deck].map((card) => card.id);
+    const heldFromThisDeck = Object.values(players).reduce(
+      (count, player) => count + player.heldJailCards.filter((held) => held === deck).length,
+      0,
+    );
+
+    if (heldFromThisDeck === 0) return declared;
+
+    const releaseId = pack.decks[deck].find((card) => card.effect.kind === 'get_out_of_jail')?.id;
+    if (releaseId === undefined) {
+      throw new Error(`Board pack ${pack.id} has no release card in the ${deck} deck`);
+    }
+    if (heldFromThisDeck > 1) {
+      throw new Error(
+        `buildState was asked for ${heldFromThisDeck} held ${deck} release cards, but there is only one`,
+      );
+    }
+
+    return declared.filter((id) => id !== releaseId);
+  }
+
   return {
     version: 1,
     boardPackId,
@@ -128,8 +158,8 @@ export function buildState(options: BuildStateOptions = {}): GameState {
     openTrade: options.openTrade ?? null,
     turn: { doublesCount: 0, hasRolled: false, lastRoll: null, ...options.turn },
     decks: {
-      chance: { order: options.decks?.chance ?? pack.decks.chance.map((card) => card.id) },
-      chest: { order: options.decks?.chest ?? pack.decks.chest.map((card) => card.id) },
+      chance: { order: deckOrder('chance') },
+      chest: { order: deckOrder('chest') },
     },
     rng: createRng(options.seed ?? 1),
   };

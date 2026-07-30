@@ -95,8 +95,6 @@ function label(legal: LegalAction, currency: string): string {
       return 'Bid';
     case 'PASS_BID':
       return 'Pass';
-    case 'AUCTION_TIMEOUT':
-      return 'Close the auction';
     case 'PAY_JAIL_FINE':
       return `Pay the fine (${formatMoney(legal.fine, currency)})`;
     case 'USE_JAIL_CARD':

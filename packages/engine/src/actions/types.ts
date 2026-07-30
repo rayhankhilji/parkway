@@ -77,7 +77,6 @@ export type LegalAction =
       readonly maximum: number;
     }
   | { readonly type: 'PASS_BID' }
-  | { readonly type: 'AUCTION_TIMEOUT'; readonly deadlineAt: number }
   | { readonly type: 'PAY_JAIL_FINE'; readonly fine: number }
   | { readonly type: 'USE_JAIL_CARD' }
   | { readonly type: 'ROLL_FOR_JAIL'; readonly attemptsRemaining: number }

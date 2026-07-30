@@ -5,6 +5,8 @@ import type { GameState } from '../state/types';
 import { activePlayerId, boardOf, diceTotal, getPlayer, isDouble } from '../state/selectors';
 import { advanceBy } from '../rules/movement';
 import { payOrEnterDebt } from '../rules/payment';
+import { returnCardToBottom } from '../cards/deck';
+import type { ActionMeta } from '../actions/types';
 import { drawDice, landAndContinue } from './roll';
 import type { PhaseResult } from './turnFlow';
 
@@ -20,7 +22,10 @@ import type { PhaseResult } from './turnFlow';
  * Paying the fine voluntarily and spending a held release card are separate
  * actions that arrive with the rest of F9.
  */
-export function handleRollForJail(state: GameState): Result<PhaseResult, RuleViolation> {
+export function handleRollForJail(
+  state: GameState,
+  meta: ActionMeta,
+): Result<PhaseResult, RuleViolation> {
   if (state.phase.kind !== 'awaiting_jail_decision') {
     return err(violation('WRONG_PHASE', 'You are not deciding how to leave the gaol.'));
   }
@@ -54,6 +59,7 @@ export function handleRollForJail(state: GameState): Result<PhaseResult, RuleVio
         playerId,
         [...events, ...released.events, ...moved.events],
         roll,
+        meta,
       ),
     );
   }
@@ -85,7 +91,13 @@ export function handleRollForJail(state: GameState): Result<PhaseResult, RuleVio
   const released = releaseFromJail(payment.state, playerId, 'forced_fine');
   const moved = advanceBy(released.state, playerId, diceTotal(roll));
   return ok(
-    landAndContinue(moved.state, playerId, [...events, ...released.events, ...moved.events], roll),
+    landAndContinue(
+      moved.state,
+      playerId,
+      [...events, ...released.events, ...moved.events],
+      roll,
+      meta,
+    ),
   );
 }
 
@@ -105,4 +117,89 @@ export function releaseFromJail(
     },
     events: [{ type: 'LEFT_JAIL', playerId, method }],
   };
+}
+
+/**
+ * Paying the fine to get out.
+ *
+ * The player leaves immediately and then rolls as normal — this is not a roll, it
+ * is the thing you do before one, so the phase goes back to awaiting a roll rather
+ * than ending the turn.
+ */
+export function handlePayJailFine(state: GameState): Result<PhaseResult, RuleViolation> {
+  if (state.phase.kind !== 'awaiting_jail_decision') {
+    return err(violation('WRONG_PHASE', 'You are not deciding how to leave the gaol.'));
+  }
+
+  const playerId = activePlayerId(state);
+  if (!getPlayer(state, playerId).inJail) {
+    return err(violation('NOT_IN_JAIL', 'You are not in the gaol.'));
+  }
+
+  const pack = boardOf(state);
+  if (getPlayer(state, playerId).cash < pack.jail.fine) {
+    return err(violation('INSUFFICIENT_FUNDS', 'You cannot afford the fine.'));
+  }
+
+  const payment = payOrEnterDebt(state, playerId, null, pack.jail.fine, {
+    kind: 'awaiting_jail_decision',
+  });
+
+  if (payment.enteredDebt) {
+    throw new Error('A fine that passed the affordability check still entered debt');
+  }
+
+  const released = releaseFromJail(payment.state, playerId, 'fine');
+
+  return ok({
+    state: { ...released.state, phase: { kind: 'awaiting_roll' } },
+    events: [...payment.events, ...released.events],
+  });
+}
+
+/**
+ * Spending a held release card.
+ *
+ * The card goes back to the bottom of the deck it came from, which is why a player
+ * holds the deck rather than the card: there is nothing else about it worth
+ * remembering, and the deck is the part that has to be right (→ PRD F10).
+ */
+export function handleUseJailCard(state: GameState): Result<PhaseResult, RuleViolation> {
+  if (state.phase.kind !== 'awaiting_jail_decision') {
+    return err(violation('WRONG_PHASE', 'You are not deciding how to leave the gaol.'));
+  }
+
+  const playerId = activePlayerId(state);
+  const player = getPlayer(state, playerId);
+
+  if (!player.inJail) {
+    return err(violation('NOT_IN_JAIL', 'You are not in the gaol.'));
+  }
+
+  const [deck, ...rest] = player.heldJailCards;
+  if (deck === undefined) {
+    return err(violation('NO_JAIL_CARD', 'You have no release card to use.'));
+  }
+
+  const pack = boardOf(state);
+  const cardId = pack.decks[deck].find((card) => card.effect.kind === 'get_out_of_jail')?.id;
+  if (cardId === undefined) {
+    throw new Error(`Board pack ${pack.id} has no release card in the ${deck} deck`);
+  }
+
+  const returned = returnCardToBottom(
+    {
+      ...state,
+      players: { ...state.players, [playerId]: { ...player, heldJailCards: rest } },
+    },
+    deck,
+    cardId,
+  );
+
+  const released = releaseFromJail(returned, playerId, 'card');
+
+  return ok({
+    state: { ...released.state, phase: { kind: 'awaiting_roll' } },
+    events: released.events,
+  });
 }
