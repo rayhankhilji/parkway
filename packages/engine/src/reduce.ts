@@ -7,6 +7,8 @@ import { handleAuctionTimeout, handlePassBid, handlePlaceBid } from './phases/au
 import { handlePayJailFine, handleRollForJail, handleUseJailCard } from './phases/jail';
 import { handleBuyProperty, handleDeclinePurchase } from './phases/purchase';
 import { handleRollDice } from './phases/roll';
+import { buildHouse, sellBuilding } from './rules/building';
+import { mortgage, unmortgage } from './rules/mortgage';
 import { err, type Result } from './result';
 import type { GameState } from './state/types';
 
@@ -102,6 +104,14 @@ export function reduce(
       return handlePassBid(state, meta.playerId, meta.now);
     case 'AUCTION_TIMEOUT':
       return handleAuctionTimeout(state, meta.now);
+    case 'BUILD_HOUSE':
+      return buildHouse(state, meta.playerId, action.squareId);
+    case 'SELL_HOUSE':
+      return sellBuilding(state, meta.playerId, action.squareId);
+    case 'MORTGAGE':
+      return mortgage(state, meta.playerId, action.squareId);
+    case 'UNMORTGAGE':
+      return unmortgage(state, meta.playerId, action.squareId);
     default:
       return err(violation('WRONG_PHASE', `You cannot ${describe(action)} right now.`));
   }

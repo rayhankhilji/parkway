@@ -112,3 +112,22 @@ export { maxCardDepth, type Landing, type LandingContext } from './rules/landing
 export { getLegalActions, isActionLegal } from './legalActions';
 
 export { minimumBid, openAuction, auctionInProgress } from './phases/auction';
+
+export {
+  buildHouse,
+  sellBuilding,
+  buildableSquares,
+  sellableSquares,
+  developmentLevel,
+} from './rules/building';
+
+export {
+  mortgage,
+  unmortgage,
+  mortgageableSquares,
+  unmortgageableSquares,
+  unmortgageCost,
+  transferInterest,
+} from './rules/mortgage';
+
+export { canManage, managementBlockedBy } from './rules/management';

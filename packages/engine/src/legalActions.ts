@@ -1,6 +1,8 @@
 import type { LegalAction } from './actions/types';
 import type { GameState, PlayerId } from './state/types';
 import { minimumBid } from './phases/auction';
+import { buildableSquares, sellableSquares } from './rules/building';
+import { mortgageableSquares, unmortgageableSquares } from './rules/mortgage';
 import { activePlayerId, boardOf, findPlayer, getPlayer, priceOf } from './state/selectors';
 
 /**
@@ -103,6 +105,27 @@ export function getLegalActions(state: GameState, playerId: PlayerId): readonly 
       // Settlement arrives with the debt rules.
       break;
   }
+
+  /*
+   * Property management is appended regardless of phase, because the real rules
+   * allow it on somebody else's turn (→ D10). The predicates inside these
+   * selectors are what exclude it during an auction, and during a debt for
+   * everyone except the debtor.
+   *
+   * Each entry carries the squares it applies to, so the UI can open a dialog
+   * listing exactly the lots that qualify rather than working that out itself.
+   */
+  const buildable = buildableSquares(state, playerId);
+  if (buildable.length > 0) actions.push({ type: 'BUILD_HOUSE', squareIds: buildable });
+
+  const sellable = sellableSquares(state, playerId);
+  if (sellable.length > 0) actions.push({ type: 'SELL_HOUSE', squareIds: sellable });
+
+  const mortgageable = mortgageableSquares(state, playerId);
+  if (mortgageable.length > 0) actions.push({ type: 'MORTGAGE', squareIds: mortgageable });
+
+  const redeemable = unmortgageableSquares(state, playerId);
+  if (redeemable.length > 0) actions.push({ type: 'UNMORTGAGE', squareIds: redeemable });
 
   return actions;
 }

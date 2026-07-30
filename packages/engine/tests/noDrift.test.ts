@@ -3,7 +3,7 @@ import type { Action, LegalAction } from '../src/actions/types';
 import { getLegalActions } from '../src/legalActions';
 import { reduce } from '../src/reduce';
 import type { GameState } from '../src/state/types';
-import { buildState } from './helpers/buildState';
+import { buildState, ownGroup } from './helpers/buildState';
 
 /**
  * The property that keeps the UI and the server in step.
@@ -39,10 +39,44 @@ function actionFor(legal: LegalAction): Action | null {
       return { type: 'USE_JAIL_CARD' };
     case 'PASS_BID':
       return { type: 'PASS_BID' };
+
+    // These advertise the squares they apply to, so every one of them can be
+    // checked rather than taken on trust. If getLegalActions lists a lot as
+    // buildable, building on it must be accepted.
+    case 'BUILD_HOUSE':
+      return firstSquare(legal.squareIds, 'BUILD_HOUSE');
+    case 'SELL_HOUSE':
+      return firstSquare(legal.squareIds, 'SELL_HOUSE');
+    case 'MORTGAGE':
+      return firstSquare(legal.squareIds, 'MORTGAGE');
+    case 'UNMORTGAGE':
+      return firstSquare(legal.squareIds, 'UNMORTGAGE');
+
     default:
-      // Entries that carry a choice — a bid amount, a square to build on — are
-      // covered by the tests for the rules that produce them.
+      // Entries that carry a free-form choice — a bid amount, a composed trade —
+      // are covered by the tests for the rules that produce them.
       return null;
+  }
+}
+
+function firstSquare(
+  squareIds: readonly number[],
+  type: 'BUILD_HOUSE' | 'SELL_HOUSE' | 'MORTGAGE' | 'UNMORTGAGE',
+): Action | null {
+  const squareId = squareIds[0];
+  return squareId === undefined ? null : { type, squareId };
+}
+
+/** Every square an offered management action names, not just the first. */
+function allSquareActions(legal: LegalAction): readonly Action[] {
+  switch (legal.type) {
+    case 'BUILD_HOUSE':
+    case 'SELL_HOUSE':
+    case 'MORTGAGE':
+    case 'UNMORTGAGE':
+      return legal.squareIds.map((squareId) => ({ type: legal.type, squareId }));
+    default:
+      return [];
   }
 }
 
@@ -77,6 +111,22 @@ const positions: ReadonlyArray<{ readonly name: string; readonly state: GameStat
     }),
   },
   { name: 'ready to end the turn', state: buildState({ phase: { kind: 'awaiting_end_turn' } }) },
+  {
+    name: 'holding a complete group they can build on',
+    state: buildState({ deeds: ownGroup('group-1', 'ada') }),
+  },
+  {
+    name: 'holding a developed group they can sell from',
+    state: buildState({ deeds: ownGroup('group-1', 'ada', { houses: 2 }) }),
+  },
+  {
+    name: 'holding a mortgaged lot they can redeem',
+    state: buildState({ deeds: { 1: { ownerId: 'ada', mortgaged: true } } }),
+  },
+  {
+    name: 'holding a lot on somebody else turn',
+    state: buildState({ activeIndex: 1, deeds: ownGroup('group-2', 'ada') }),
+  },
 ];
 
 describe('everything offered is accepted', () => {
@@ -84,15 +134,21 @@ describe('everything offered is accepted', () => {
     it(`holds for a player ${name}`, () => {
       for (const id of state.turnOrder) {
         for (const legal of getLegalActions(state, id)) {
-          const action = actionFor(legal);
-          if (action === null) continue;
+          // Every square a management action names is checked, not just the
+          // first: a selector that offers four lots and means three is exactly
+          // the drift this test exists to catch.
+          const candidates = [...allSquareActions(legal)];
+          const single = allSquareActions(legal).length === 0 ? actionFor(legal) : null;
+          if (single !== null) candidates.push(single);
 
-          const result = reduce(state, action, { playerId: id, now: 0 });
-          if (!result.ok) {
-            throw new Error(
-              `getLegalActions offered ${legal.type} to ${id} but reduce refused it: ` +
-                `${result.error.code} — ${result.error.message}`,
-            );
+          for (const action of candidates) {
+            const result = reduce(state, action, { playerId: id, now: 0 });
+            if (!result.ok) {
+              throw new Error(
+                `getLegalActions offered ${legal.type} to ${id} but reduce refused it: ` +
+                  `${result.error.code} — ${result.error.message}`,
+              );
+            }
           }
         }
       }
