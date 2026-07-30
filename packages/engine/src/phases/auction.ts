@@ -4,6 +4,7 @@ import type { GameEvent } from '../events/types';
 import { err, ok, type Result } from '../result';
 import type { GameState, PlayerId } from '../state/types';
 import { boardOf, getDeed, getPlayer, solventPlayerIds } from '../state/selectors';
+import { withSolventActivePlayer } from './endTurn';
 import { phaseAfterObligations, type PhaseResult } from './turnFlow';
 
 /**
@@ -271,7 +272,9 @@ function resumeAfterLot(
     return { state: opened.state, events: [...events, ...opened.events] };
   }
 
-  return { state: { ...state, phase: phaseAfterObligations(state) }, events };
+  // An estate auction outlives the player whose estate it was, so the turn may
+  // need handing on rather than back (→ withSolventActivePlayer).
+  return withSolventActivePlayer({ ...state, phase: phaseAfterObligations(state) }, events);
 }
 
 /** Whether an auction is running, for the handlers that must stand down while it is. */

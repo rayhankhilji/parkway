@@ -223,10 +223,16 @@ describe('nothing is offered to someone who cannot act', () => {
       },
     });
 
+    // Declaring is always there — it is the other way out — and so is conceding.
+    // What matters is that the debtor can still raise money and nobody else can
+    // do anything at all.
     expect(getLegalActions(state, 'ada').map((action) => action.type)).toEqual([
+      'DECLARE_BANKRUPTCY',
       'MORTGAGE',
       'OFFER_TRADE',
+      'CONCEDE',
     ]);
+    // Bo cannot even concede: doing so would have to replace Ada's debt phase.
     expect(getLegalActions(state, 'bo')).toEqual([]);
   });
 });

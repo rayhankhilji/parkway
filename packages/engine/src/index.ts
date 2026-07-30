@@ -113,6 +113,10 @@ export { getLegalActions, isActionLegal } from './legalActions';
 
 export { minimumBid, openAuction, auctionInProgress } from './phases/auction';
 
+export { isFinished, currentPlayerId } from './phases/debt';
+
+export { winnerOf, sellAllBuildings } from './rules/bankruptcy';
+
 export {
   handleOfferTrade,
   handleAcceptTrade,

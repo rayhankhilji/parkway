@@ -110,7 +110,14 @@ export function getLegalActions(state: GameState, playerId: PlayerId): readonly 
     }
 
     case 'awaiting_debt':
-      // Settlement arrives with the debt rules.
+      if (state.phase.debtorId === playerId) {
+        // Settling is only offered once the money is actually there. Until then
+        // the ways out are the management actions below, or declaring.
+        if (player.cash >= state.phase.amount) {
+          actions.push({ type: 'SETTLE_DEBT', amount: state.phase.amount });
+        }
+        actions.push({ type: 'DECLARE_BANKRUPTCY', amount: state.phase.amount });
+      }
       break;
   }
 
@@ -149,6 +156,19 @@ export function getLegalActions(state: GameState, playerId: PlayerId): readonly 
     } else if (state.openTrade.fromId === playerId) {
       actions.push({ type: 'WITHDRAW_TRADE', tradeId: state.openTrade.id });
     }
+  }
+
+  /*
+   * Conceding is not tied to a phase: a player may walk away whenever the game is
+   * running (→ PRD F14). Two exceptions, both because the estate would have
+   * nowhere sensible to go. During an auction, conceding would pull a bidder out
+   * of a lot already under the hammer. During somebody else's debt, settling this
+   * estate would have to replace the debt phase, quietly forgiving it.
+   */
+  const someoneElseOwes = state.phase.kind === 'awaiting_debt' && state.phase.debtorId !== playerId;
+
+  if (state.phase.kind !== 'auction' && !someoneElseOwes) {
+    actions.push({ type: 'CONCEDE' });
   }
 
   return actions;

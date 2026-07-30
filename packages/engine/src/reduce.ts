@@ -2,6 +2,7 @@ import type { Action, ActionMeta } from './actions/types';
 import { violation, type RuleViolation } from './errors';
 import type { GameEvent } from './events/types';
 import { findPlayer, isActivePlayer } from './state/selectors';
+import { handleConcede, handleDeclareBankruptcy, handleSettleDebt } from './phases/debt';
 import { handleEndTurn } from './phases/endTurn';
 import { handleAuctionTimeout, handlePassBid, handlePlaceBid } from './phases/auction';
 import { handlePayJailFine, handleRollForJail, handleUseJailCard } from './phases/jail';
@@ -110,6 +111,12 @@ export function reduce(
       return handlePassBid(state, meta.playerId, meta.now);
     case 'AUCTION_TIMEOUT':
       return handleAuctionTimeout(state, meta.now);
+    case 'SETTLE_DEBT':
+      return handleSettleDebt(state, meta.playerId);
+    case 'DECLARE_BANKRUPTCY':
+      return handleDeclareBankruptcy(state, meta.playerId, meta.now);
+    case 'CONCEDE':
+      return handleConcede(state, meta.playerId, meta.now);
     case 'OFFER_TRADE':
       return handleOfferTrade(state, meta.playerId, action.toId, action.offered, action.requested);
     case 'ACCEPT_TRADE':
