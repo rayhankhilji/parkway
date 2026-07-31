@@ -17,6 +17,19 @@ export default defineConfig({
       },
       {
         test: {
+          name: 'bot',
+          root: './packages/bot',
+          include: ['tests/**/*.test.ts'],
+          environment: 'node',
+        },
+        resolve: {
+          alias: {
+            '@parkway/engine': new URL('./packages/engine/src/index.ts', import.meta.url).pathname,
+          },
+        },
+      },
+      {
+        test: {
           name: 'fuzz',
           root: './packages/engine',
           include: ['tests/fuzz/**/*.test.ts'],

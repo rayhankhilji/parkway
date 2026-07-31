@@ -97,6 +97,16 @@ importers:
         specifier: 5.6.3
         version: 5.6.3
 
+  packages/bot:
+    dependencies:
+      '@parkway/engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      typescript:
+        specifier: 5.6.3
+        version: 5.6.3
+
   packages/engine:
     devDependencies:
       typescript:
