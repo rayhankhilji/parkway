@@ -8,7 +8,20 @@ export default defineConfig({
           name: 'engine',
           root: './packages/engine',
           include: ['tests/**/*.test.ts'],
+          // The fuzz suite plays thousands of whole games and takes minutes. It
+          // is a separate project so `test:engine` stays the fast loop it is
+          // meant to be; `test:fuzz` runs it.
+          exclude: ['tests/fuzz/**'],
           environment: 'node',
+        },
+      },
+      {
+        test: {
+          name: 'fuzz',
+          root: './packages/engine',
+          include: ['tests/fuzz/**/*.test.ts'],
+          environment: 'node',
+          testTimeout: 900_000,
         },
       },
       {

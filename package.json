@@ -10,13 +10,15 @@
   "scripts": {
     "dev": "pnpm --filter @parkway/web dev",
     "build": "pnpm --filter @parkway/web build",
-    "test": "vitest run",
+    "test": "vitest run --project engine --project web",
     "test:engine": "vitest run --project engine",
     "test:web": "vitest run --project web",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "db:migrate": "supabase db push"
+    "db:migrate": "supabase db push",
+    "test:fuzz": "PARKWAY_FUZZ=full vitest run --project fuzz",
+    "test:fuzz:quick": "vitest run --project fuzz"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

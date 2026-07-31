@@ -64,7 +64,16 @@ export function handleRollForJail(
     );
   }
 
-  const attempts = player.jailAttempts + 1;
+  /*
+   * Clamped at the maximum rather than left to climb.
+   *
+   * A player who fails their final attempt and cannot afford the compulsory fine
+   * stays inside with the count already at its limit. Left to increment, the next
+   * turn would record a fourth attempt out of three. Clamping keeps them in the
+   * final-attempt state instead: every turn from here is another forced fine,
+   * which is exactly the position they are in until they can pay it.
+   */
+  const attempts = Math.min(player.jailAttempts + 1, pack.jail.maxTurns);
   const failed: GameState = {
     ...rolled,
     players: { ...rolled.players, [playerId]: { ...player, jailAttempts: attempts } },

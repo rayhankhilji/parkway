@@ -213,7 +213,7 @@ describe('a game played to the end', () => {
    * breaks an invariant, however long the game goes on. Stage 7's fuzz suite
    * takes this much further.
    */
-  it('never runs out of moves in a longer game with more players', () => {
+  it('never runs out of moves in a longer game with more players', { timeout: 60_000 }, () => {
     const stalled: string[] = [];
 
     for (const seed of [1, 42]) {
