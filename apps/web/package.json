@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@parkway/bot": "workspace:*",
     "@parkway/engine": "workspace:*",
     "@supabase/supabase-js": "^2.47.0",
     "clsx": "^2.1.1",

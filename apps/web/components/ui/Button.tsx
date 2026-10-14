@@ -2,29 +2,34 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
 /**
- * The four button variants in the design system, and nothing else.
+ * Buttons.
  *
- * `disabledReason` exists because of a rule in DESIGN.md that is easy to skip: a
- * disabled control must say why it is disabled, and the reason must come from the
- * engine's legality result rather than being invented here. A component that
- * writes its own explanation for why an action is unavailable has started
- * guessing at rules.
+ * `primary` is polished gold — the one thing to press. Everything presses down
+ * a little on click, because a control that does not respond to the finger
+ * feels broken on a touch screen even when it works.
+ *
+ * `disabledReason` exists because a disabled control must say why, and the
+ * reason must come from the engine's answer rather than being invented here.
  */
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
-type Size = 'default' | 'compact' | 'bar';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'good';
+type Size = 'sm' | 'md' | 'lg' | 'xl';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-accent-solid text-white hover:bg-accent',
-  secondary: 'bg-surface-raised text-text ring-1 ring-border hover:bg-border',
-  ghost: 'bg-transparent text-text-muted hover:text-text',
-  danger: 'bg-transparent text-danger ring-1 ring-transparent hover:ring-danger',
+  primary:
+    'text-[#2a1d07] bg-[linear-gradient(180deg,#f8dc92,#e6bc5f_55%,#c99a3c)] shadow-[0_1px_0_rgb(255_255_255/0.5)_inset,0_-2px_0_rgb(120_80_20/0.35)_inset,0_6px_16px_rgb(230_188_95/0.25)] hover:brightness-110',
+  secondary:
+    'text-text bg-surface-high/90 ring-1 ring-inset ring-white/10 hover:bg-[#3a3126] shadow-sm',
+  ghost: 'text-text-muted hover:text-text hover:bg-white/5',
+  danger: 'text-[#ffd8d3] bg-[#4a1914] ring-1 ring-inset ring-bad/40 hover:bg-[#5c1f18]',
+  good: 'text-[#0c2615] bg-[linear-gradient(180deg,#7be3a3,#4fca80_60%,#36a764)] shadow-[0_1px_0_rgb(255_255_255/0.4)_inset,0_6px_16px_rgb(79_202_128/0.22)] hover:brightness-110',
 };
 
 const sizes: Record<Size, string> = {
-  default: 'h-9 px-4 text-base',
-  compact: 'h-8 px-3 text-sm',
-  bar: 'h-11 px-5 text-base',
+  sm: 'h-8 px-3 text-sm rounded-lg',
+  md: 'h-10 px-4 text-sm rounded-xl',
+  lg: 'h-12 px-5 text-base rounded-xl',
+  xl: 'h-14 px-7 text-lg rounded-2xl',
 };
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -38,7 +43,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 export function Button({
   variant = 'secondary',
-  size = 'default',
+  size = 'md',
   pending = false,
   disabledReason,
   className,
@@ -53,17 +58,15 @@ export function Button({
       type="button"
       {...rest}
       disabled={isDisabled}
-      title={isDisabled ? disabledReason : undefined}
+      title={isDisabled ? disabledReason : rest.title}
       aria-busy={pending}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-md font-medium',
-        'transition-colors duration-120 ease-standard',
+        'relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap font-semibold',
+        'transition-[transform,filter,background-color,box-shadow] duration-150 ease-out',
+        'active:scale-[0.96]',
         variants[variant],
         sizes[size],
-        // A disabled control still has to read as a control. Without the ring it
-        // looks like a line of dim text and people stop looking for it.
-        isDisabled &&
-          'cursor-not-allowed bg-surface text-text-faint ring-1 ring-border hover:bg-surface',
+        isDisabled && 'pointer-events-none opacity-45 saturate-50',
         className,
       )}
     >
@@ -73,12 +76,11 @@ export function Button({
   );
 }
 
-/** The only looping animation in the system, and only for real pending work. */
 function Spinner() {
   return (
     <span
       aria-hidden="true"
-      className="size-3 animate-spin rounded-full border border-current border-t-transparent"
+      className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
     />
   );
 }

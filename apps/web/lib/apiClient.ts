@@ -16,6 +16,8 @@ export type PlayerSummary = {
   readonly seat: number;
   readonly colour: string;
   readonly isConnected: boolean;
+  /** Set for computer players in a solo game. */
+  readonly isBot?: boolean;
 };
 
 export type GamePayload = {

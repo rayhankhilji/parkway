@@ -44,6 +44,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@parkway/bot':
+        specifier: workspace:*
+        version: link:../../packages/bot
       '@parkway/engine':
         specifier: workspace:*
         version: link:../../packages/engine

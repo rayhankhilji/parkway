@@ -8,7 +8,8 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./*"],
-      "@parkway/engine": ["../../packages/engine/src/index.ts"]
+      "@parkway/engine": ["../../packages/engine/src/index.ts"],
+      "@parkway/bot": ["../../packages/bot/src/index.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

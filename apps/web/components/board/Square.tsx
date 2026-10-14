@@ -1,160 +1,360 @@
 'use client';
 
-import type { DeedState, PublicGameState, Square as BoardSquare } from '@parkway/engine';
+import type { DeedState, Square as BoardSquare } from '@parkway/engine';
 import { cn } from '@/lib/cn';
 import { formatMoney } from '@/lib/format';
-import { groupBarClass, labelRotationClass, type Placement } from './layout';
-import { Token } from './Token';
+import type { Placement } from './layout';
+import {
+  ArrowIcon,
+  BarsIcon,
+  BoltIcon,
+  ChestIcon,
+  CoinIcon,
+  DropIcon,
+  GavelIcon,
+  GemIcon,
+  HouseIcon,
+  QuestionIcon,
+  TrainIcon,
+  TreeIcon,
+} from './icons';
 
 /**
- * One square.
+ * One square, printed on the board.
  *
- * Everything here is presentation. The component is handed a square from the
- * board pack, its deed if it has one, and whoever is standing on it — it works
- * nothing out for itself. No rent, no affordability, no whose-turn-is-it. Those
- * are rules, and rules live in the engine.
+ * Each edge square is drawn once, upright, as if it sat on the bottom edge —
+ * colour band towards the centre, owner's strip at the outer edge — and then
+ * rotated into place. That keeps one layout for forty squares, and it is how a
+ * printed board works: every name reads from the edge you would sit at.
  *
- * The group colour is a bar on the outward edge rather than a fill, because a
- * filled square is unreadable behind a token and reads cheap (→ DESIGN).
+ * The top row is the exception. Rotating it a half turn would put its names
+ * upside down for everyone on a screen, so it is mirrored instead.
+ *
+ * Everything here is presentation. No rent, no affordability, no whose turn —
+ * those are rules, and rules live in the engine.
  */
 
 export type SquareProps = {
   readonly square: BoardSquare;
   readonly placement: Placement;
   readonly deed: DeedState | undefined;
-  readonly occupants: readonly { readonly playerId: string; readonly colour: string }[];
   readonly currency: string;
   readonly ownerColour: string | null;
-  readonly isActive: boolean;
+  readonly landed: boolean;
+  readonly stampKey: number | undefined;
+  readonly dimmed: boolean;
+  readonly onSelect: (squareId: number) => void;
 };
 
 export function Square({
   square,
   placement,
   deed,
-  occupants,
   currency,
   ownerColour,
-  isActive,
+  landed,
+  stampKey,
+  dimmed,
+  onSelect,
 }: SquareProps) {
-  const group = square.kind === 'property' ? square.group : null;
-  const barColour =
-    group !== null
-      ? `var(--color-${group})`
-      : square.kind === 'transit'
-        ? 'var(--color-group-rail)'
-        : square.kind === 'utility'
-          ? 'var(--color-group-utility)'
-          : null;
-
-  const price = 'price' in square ? square.price : null;
-  const mortgaged = deed?.mortgaged === true;
+  const label = `${square.name}${deed?.ownerId != null ? ', owned' : ''}${deed?.mortgaged === true ? ', mortgaged' : ''}`;
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => onSelect(square.id)}
+      aria-label={label}
       style={{ gridColumn: placement.column, gridRow: placement.row }}
       className={cn(
-        'relative flex min-w-0 flex-col items-center justify-center overflow-hidden',
-        'rounded-sm border border-border bg-surface p-1',
-        isActive && 'bg-surface-raised',
+        'group/sq relative min-h-0 min-w-0 overflow-hidden text-ink outline-none',
+        'transition-[filter,opacity] duration-200',
+        'hover:z-10 hover:brightness-[1.04] focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-gold',
+        dimmed && 'opacity-45 saturate-50',
       )}
       data-square={square.id}
     >
-      {barColour !== null && (
-        <span
-          aria-hidden="true"
-          className={cn('absolute', groupBarClass[placement.edge])}
-          style={{ backgroundColor: barColour }}
-        />
+      {placement.isCorner ? (
+        <Corner square={square} placement={placement} currency={currency} />
+      ) : (
+        <Upright edge={placement.edge}>
+          <EdgeContent
+            square={square}
+            deed={deed}
+            currency={currency}
+            ownerColour={ownerColour}
+            stampKey={stampKey}
+            mirrored={placement.edge === 'top'}
+          />
+        </Upright>
       )}
 
-      {/* Ownership reads as a ring in the owner's colour, not a fill. */}
-      {ownerColour !== null && (
+      {landed && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-sm ring-2 ring-inset"
-          style={{
-            color: `var(--color-player-${ownerColour})`,
-            boxShadow: 'inset 0 0 0 2px currentColor',
-          }}
+          className="pointer-events-none absolute inset-0 z-10 animate-pulse-ring rounded-[2px] ring-2 ring-inset ring-gold"
         />
       )}
+    </button>
+  );
+}
 
-      {mortgaged && (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
+/** Lays out content as a bottom-edge square and turns it to face its edge. */
+function Upright({
+  edge,
+  children,
+}: {
+  readonly edge: Placement['edge'];
+  readonly children: React.ReactNode;
+}) {
+  if (edge === 'bottom' || edge === 'top') {
+    return <div className="absolute inset-0">{children}</div>;
+  }
+  // Side squares are twice as wide as tall, so the upright frame is the
+  // transposed box, centred and turned a quarter.
+  return (
+    <div
+      className="absolute left-1/4 top-[-50%] h-[200%] w-1/2"
+      style={{ transform: edge === 'left' ? 'rotate(90deg)' : 'rotate(-90deg)' }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function EdgeContent({
+  square,
+  deed,
+  currency,
+  ownerColour,
+  stampKey,
+  mirrored,
+}: {
+  readonly square: BoardSquare;
+  readonly deed: DeedState | undefined;
+  readonly currency: string;
+  readonly ownerColour: string | null;
+  readonly stampKey: number | undefined;
+  readonly mirrored: boolean;
+}) {
+  const mortgaged = deed?.mortgaged === true;
+  const band = square.kind === 'property' ? `var(--color-${square.group})` : null;
+
+  const price = 'price' in square ? square.price : null;
+
+  return (
+    <div className={cn('paper absolute inset-0 flex', mirrored ? 'flex-col-reverse' : 'flex-col')}>
+      {band !== null ? (
+        <div
+          className={cn(
+            'relative flex h-[22%] shrink-0 items-center justify-center gap-[3%]',
+            mirrored ? 'border-t' : 'border-b',
+            'border-ink/40',
+          )}
           style={{
-            backgroundImage:
-              'repeating-linear-gradient(45deg, rgb(255 255 255 / 0.12) 0 2px, transparent 2px 6px)',
+            background: `linear-gradient(${mirrored ? '0deg' : '180deg'}, color-mix(in oklab, ${band} 88%, white), ${band})`,
           }}
-        />
-      )}
+        >
+          <Buildings deed={deed} />
+        </div>
+      ) : null}
 
       <div
         className={cn(
-          'flex min-w-0 flex-col items-center gap-1 text-center',
-          labelRotationClass[placement.edge],
+          'flex min-h-0 flex-1 flex-col items-center px-[6%] text-center',
+          'justify-between',
+          // Keep the outer edge clear for the owner's strip.
+          mirrored ? 'flex-col-reverse pb-[8%] pt-[14%]' : 'pb-[14%] pt-[8%]',
         )}
       >
         <span
           className={cn(
-            'text-xs uppercase tracking-[0.04em]',
-            mortgaged ? 'text-text-faint' : 'text-text-muted',
+            'block w-full text-[0.98cqw] font-semibold uppercase leading-[1.1] tracking-[0.02em] text-balance',
+            '@max-[620px]/board:hidden',
+            mortgaged && 'text-ink-muted line-through decoration-ink/30',
           )}
         >
           {square.name}
         </span>
-        {price !== null && (
-          <span className="font-mono text-xs text-money tabular-nums">
+
+        <SquareIcon square={square} />
+
+        {price !== null ? (
+          <span className="text-[0.95cqw] font-medium tabular-nums text-ink-muted @max-[620px]/board:hidden">
             {formatMoney(price, currency)}
           </span>
+        ) : square.kind === 'tax' ? (
+          <span className="text-[0.95cqw] font-medium tabular-nums text-ink-muted @max-[620px]/board:hidden">
+            Pay {formatMoney(square.flatAmount, currency)}
+          </span>
+        ) : (
+          <span />
         )}
       </div>
 
-      {deed !== undefined && <Buildings deed={deed} edge={placement.edge} />}
+      {/* The owner's strip along the outer edge. */}
+      <div
+        className={cn(
+          'absolute inset-x-0 h-[11%] transition-opacity duration-300',
+          mirrored ? 'top-0' : 'bottom-0',
+          ownerColour === null ? 'opacity-0' : 'opacity-100',
+        )}
+      >
+        {ownerColour !== null && (
+          <span
+            key={stampKey}
+            className="block h-full w-full animate-stamp"
+            style={{
+              background: `linear-gradient(${mirrored ? '180deg' : '0deg'}, color-mix(in oklab, var(--color-player-${ownerColour}) 80%, black), var(--color-player-${ownerColour}))`,
+              boxShadow: '0 0 0 0.5px rgb(0 0 0 / 0.25)',
+            }}
+          />
+        )}
+      </div>
 
-      {occupants.length > 0 && (
-        <div className="absolute inset-x-0 bottom-1 flex flex-wrap items-center justify-center gap-1">
-          {occupants.map((occupant) => (
-            <Token key={occupant.playerId} colour={occupant.colour} />
-          ))}
-        </div>
+      {mortgaged && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(-45deg, rgb(35 29 22 / 0.13) 0 1.5px, transparent 1.5px 6px)',
+          }}
+        >
+          <span className="rotate-[-60deg] rounded-[2px] bg-bad/90 px-[6%] text-[0.8cqw] font-bold uppercase tracking-wider text-white @max-[620px]/board:hidden">
+            Mortgaged
+          </span>
+        </span>
       )}
     </div>
   );
 }
 
-/** Up to four houses along the group bar; a hotel replaces them with one bar. */
-function Buildings({ deed, edge }: { deed: DeedState; edge: Placement['edge'] }) {
-  if (deed.hotels === 0 && deed.houses === 0) return null;
+function SquareIcon({ square }: { readonly square: BoardSquare }) {
+  const size = 'w-[2.6cqw] h-[2.6cqw] @max-[620px]/board:w-[3.6cqw] @max-[620px]/board:h-[3.6cqw]';
+  switch (square.kind) {
+    case 'transit':
+      return <TrainIcon className={size} />;
+    case 'utility':
+      return /water/i.test(square.name) ? (
+        <DropIcon className={cn(size, 'text-group-8')} />
+      ) : (
+        <BoltIcon className={cn(size, 'text-group-4')} />
+      );
+    case 'card':
+      return square.deck === 'chance' ? (
+        <QuestionIcon className={cn(size, 'text-gold-deep scale-125')} />
+      ) : (
+        <ChestIcon className={cn(size, 'text-group-8')} />
+      );
+    case 'tax':
+      return square.percentageRate !== null ? (
+        <CoinIcon className={cn(size, 'text-gold-deep')} />
+      ) : (
+        <GemIcon className={cn(size, 'text-group-8')} />
+      );
+    default:
+      return <span />;
+  }
+}
 
-  const vertical = edge === 'left' || edge === 'right';
+/** Houses as little green roofs; a hotel replaces them with one red block. */
+function Buildings({ deed }: { readonly deed: DeedState | undefined }) {
+  if (deed === undefined || (deed.hotels === 0 && deed.houses === 0)) return null;
+
+  if (deed.hotels > 0) {
+    return (
+      <span
+        className="block h-[62%] w-[42%] animate-pop-in rounded-[1px] bg-[#c8262c] shadow-[0_1px_0_rgb(0_0_0/0.4)]"
+        style={{ clipPath: 'polygon(0 30%, 50% 0, 100% 30%, 100% 100%, 0 100%)' }}
+      />
+    );
+  }
 
   return (
-    <div
-      aria-hidden="true"
-      className={cn(
-        'absolute flex items-center justify-center gap-[2px]',
-        vertical ? 'inset-y-0 flex-col' : 'inset-x-0',
-        edge === 'bottom' && 'bottom-[6px]',
-        edge === 'top' && 'top-[6px]',
-        edge === 'left' && 'left-[6px]',
-        edge === 'right' && 'right-[6px]',
-      )}
-    >
-      {deed.hotels > 0 ? (
-        <span className="h-[6px] w-[14px] rounded-[1px] bg-success" />
-      ) : (
-        Array.from({ length: deed.houses }, (_, index) => (
-          <span key={index} className="size-[6px] rounded-[1px] bg-success" />
-        ))
-      )}
-    </div>
+    <>
+      {Array.from({ length: deed.houses }, (_, index) => (
+        <HouseIcon
+          key={index}
+          className="h-[70%] w-[18%] animate-pop-in text-[#1f8a4c] drop-shadow-[0_1px_0_rgb(0_0_0/0.45)]"
+        />
+      ))}
+    </>
   );
 }
 
-/** Reads the deed for a square out of public state, or undefined if unownable. */
-export function deedOf(state: PublicGameState, squareId: number): DeedState | undefined {
-  return state.deeds[squareId];
+function Corner({
+  square,
+  placement,
+  currency,
+}: {
+  readonly square: BoardSquare;
+  readonly placement: Placement;
+  readonly currency: string;
+}) {
+  const shell =
+    'paper absolute inset-0 flex flex-col items-center justify-center gap-[4%] p-[6%] text-center';
+
+  switch (square.kind) {
+    case 'start':
+      return (
+        <div className={shell}>
+          <span className="text-[0.9cqw] font-semibold uppercase leading-tight tracking-wider text-ink-muted @max-[620px]/board:hidden">
+            Collect salary as you pass
+          </span>
+          <span className="font-display text-[2.3cqw] font-black italic leading-none text-[#b3261e]">
+            {square.name.replace(/^The /, '')}
+          </span>
+          <ArrowIcon className="h-[3.4cqw] w-[6cqw] text-[#b3261e]" strokeWidth={2.4} />
+        </div>
+      );
+
+    case 'jail':
+      return (
+        <div className="paper absolute inset-0">
+          <div className="absolute right-0 top-0 flex h-[66%] w-[66%] flex-col items-center justify-center gap-[6%] border-b-2 border-l-2 border-ink/50 bg-[#f1a640]">
+            <BarsIcon className="h-[3cqw] w-[3cqw] text-ink" />
+            <span className="text-[0.95cqw] font-bold uppercase tracking-wider @max-[620px]/board:hidden">
+              In gaol
+            </span>
+          </div>
+          <span className="absolute bottom-[6%] left-[38%] -translate-x-1/2 whitespace-nowrap text-[0.85cqw] font-semibold uppercase tracking-wider text-ink-muted @max-[620px]/board:hidden">
+            Just visiting
+          </span>
+        </div>
+      );
+
+    case 'free_parking':
+      return (
+        <div className={shell}>
+          <TreeIcon className="h-[4cqw] w-[4cqw] text-group-7" />
+          <span className="font-display text-[1.35cqw] font-bold italic leading-tight @max-[620px]/board:hidden">
+            {square.name}
+          </span>
+          <span className="text-[0.85cqw] font-semibold uppercase tracking-wider text-ink-muted @max-[620px]/board:hidden">
+            Free rest
+          </span>
+        </div>
+      );
+
+    case 'go_to_jail':
+      return (
+        <div className={shell}>
+          <GavelIcon className="h-[4cqw] w-[4cqw] text-[#b3261e]" />
+          <span className="font-display text-[1.25cqw] font-bold italic leading-tight @max-[620px]/board:hidden">
+            {square.name}
+          </span>
+          <span className="text-[0.85cqw] font-semibold uppercase tracking-wider text-[#b3261e] @max-[620px]/board:hidden">
+            Go to gaol
+          </span>
+        </div>
+      );
+
+    default:
+      return (
+        <div className={shell} data-edge={placement.edge}>
+          <span className="text-[1cqw]">{square.name}</span>
+          <span className="hidden">{currency}</span>
+        </div>
+      );
+  }
 }
