@@ -342,6 +342,12 @@ function SoloSetup({ open, onClose }: { readonly open: boolean; readonly onClose
 
 /* ---- Online -------------------------------------------------------------- */
 
+// Inlined at build time. Without it the browser cannot open a live channel, so
+// online rooms cannot work however the server is configured.
+const onlineAvailable = Boolean(
+  process.env['NEXT_PUBLIC_SUPABASE_URL'] && process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'],
+);
+
 function OnlineSetup({
   open,
   onClose,
@@ -364,6 +370,11 @@ function OnlineSetup({
       title="Play with friends"
       subtitle="Up to six players, each on their own device."
     >
+      {!onlineAvailable && (
+        <p className="mb-5 rounded-xl bg-gold/10 px-3 py-2 text-sm text-gold ring-1 ring-inset ring-gold/30">
+          Online rooms are not switched on for this server yet. Playing the computer works fully.
+        </p>
+      )}
       <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-black/30 p-1" role="tablist">
         {(['create', 'join'] as const).map((tab) => (
           <button
