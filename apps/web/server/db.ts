@@ -25,6 +25,17 @@ function required(name: string): string {
   return value;
 }
 
+/**
+ * Whether this deployment has a database at all. Solo play runs entirely in the
+ * browser and needs none, so a deployment without Supabase is legitimate — the
+ * online routes just have nothing to talk to.
+ */
+export function onlineConfigured(): boolean {
+  return Boolean(
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] && process.env['SUPABASE_SERVICE_ROLE_KEY'],
+  );
+}
+
 let client: SupabaseClient | null = null;
 
 export function db(): SupabaseClient {

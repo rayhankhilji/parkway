@@ -1,6 +1,6 @@
 # Parkway
 
-A real-time multiplayer property-trading board game for the browser. Open a link, share a six-character room code, and play a full game with up to five friends. No accounts, no installs, no matchmaking queue.
+A property-trading board game for the browser. Play a full game against the computer instantly, or share a six-character room code and play with up to five friends. No accounts, no installs, no matchmaking queue.
 
 **Status: in development.** The build ships in stages; see [Progress](#progress) for what currently works. Nothing here is deployed yet.
 
@@ -54,6 +54,12 @@ pnpm typecheck
 pnpm lint
 ```
 
+## Deploying
+
+The app deploys to Vercel as-is. Import the repository, set **Root Directory** to `apps/web`, and leave everything else on its defaults: Vercel picks up pnpm and the workspace from the lockfile.
+
+With no environment variables set, solo play against the computer works fully and the online option explains that rooms are not switched on. To turn online play on, run the migrations against a Supabase project and add the four variables from `.env.example` in the Vercel project settings, setting `NEXT_PUBLIC_APP_URL` to the deployment's URL.
+
 ## Progress
 
 | Stage | What it covers                                                                       | State                                                           |
@@ -62,10 +68,10 @@ pnpm lint
 | 2     | Engine foundations: state, board pack, seeded RNG, test harness                      | done                                                            |
 | 3     | Turn loop, headless                                                                  | done                                                            |
 | 4     | Database, server routes, live multiplayer                                            | code complete, checkpoint unverified — needs a Supabase project |
-| 5     | Board and shell UI                                                                   | in progress                                                     |
-| 6     | Rules: buying, rent, cards, jail, auctions, building, mortgages, trading, bankruptcy | not started                                                     |
-| 7     | Fuzz and replay hardening                                                            | not started                                                     |
-| 8     | Design and accessibility pass                                                        | not started                                                     |
+| 5     | Board and shell UI                                                                   | done                                                            |
+| 6     | Rules: buying, rent, cards, jail, auctions, building, mortgages, trading, bankruptcy | done                                                            |
+| 7     | Fuzz and replay hardening                                                            | done                                                            |
+| 8     | Design and accessibility pass                                                        | done — tabletop redesign, motion, sound, phone layout, solo     |
 | 9     | Deployment                                                                           | not started                                                     |
 
 Each stage ends in something you can actually run, and is tagged with release notes describing what changed.
@@ -74,7 +80,15 @@ Each stage ends in something you can actually run, and is tagged with release no
 
 **In:** the full standard rule set — purchases, auctions, rent with groups and railroads and utilities, taxes, jail, both card decks, houses and hotels with even-build and finite bank supply, mortgaging, player-to-player trading, debt settlement, bankruptcy to a player and to the bank, last player standing. Reconnect that restores your seat. A complete, replayable action log rendered as a readable feed. Configurable rule variants set at creation.
 
-**Out:** accounts, matchmaking, public lobbies, bots, spectating, in-game chat, and phone-sized layouts. Below 768px the app asks for a larger screen rather than pretending a forty-square board fits on a phone.
+**Solo play:** a game against one to five computer opponents (`@parkway/bot`, four difficulties) runs entirely in the browser. The engine is a pure reducer, so the browser holds the state and runs it directly; bots see only the public state and legal actions a human would. The game is saved after every move and resumes on reload.
+
+**Out:** accounts, matchmaking, public lobbies, spectating and in-game chat.
+
+## Presentation
+
+The UI is a "premium tabletop": an ivory board in a wooden frame on felt, 3D dice, glossy tokens, and synthesised sound (no audio files). Every response from the engine is played out by a director in `store/useStage.ts` — dice tumble, the token walks square by square, cards turn over, then money moves — and the controls render from what is on screen, never from the newer truth underneath, so nobody is offered a button for a position they have not seen yet. Animation speed and sound are per-device toggles, and `prefers-reduced-motion` is respected.
+
+The board is a CSS size container and everything printed on it is sized in container units, so it scales as one object from a phone to a desktop. When it is phone-sized, the controls move from its centre to a dock beneath it.
 
 ## Licence
 

@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   // The engine ships as TypeScript source with no build step, so Next compiles it
   // alongside the app. This is what keeps the package free of a bundler config and
   // therefore free of dependencies.
-  transpilePackages: ['@parkway/engine'],
+  transpilePackages: ['@parkway/engine', '@parkway/bot'],
   // Typed routes are deliberately off. The only navigation in the app targets a
   // dynamic segment built from a server-supplied game id, which the feature
   // cannot infer from a template literal — so honouring it would mean casting at

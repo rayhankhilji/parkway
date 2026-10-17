@@ -91,20 +91,22 @@ export function boardGrid(pack: BoardPack): BoardGrid {
 }
 
 /**
- * Which side of a square the group colour bar sits on: the outward one, so the
- * ring of colour reads around the outside of the board.
+ * The centre of a square, as a percentage of the board's width and height.
+ *
+ * The token layer floats above the grid rather than living inside squares, so
+ * a token can glide from one square to the next instead of blinking between
+ * them. It needs to know where each square sits, and that is the same track
+ * arithmetic as the grid itself: corners two units across, edges one.
  */
-export const groupBarClass: Record<Edge, string> = {
-  bottom: 'bottom-0 left-0 right-0 h-[6px]',
-  left: 'left-0 top-0 bottom-0 w-[6px]',
-  top: 'top-0 left-0 right-0 h-[6px]',
-  right: 'right-0 top-0 bottom-0 w-[6px]',
-};
-
-/** Edge squares read along their edge, so the side edges rotate their labels. */
-export const labelRotationClass: Record<Edge, string> = {
-  bottom: '',
-  left: '[writing-mode:vertical-rl] rotate-180',
-  top: '',
-  right: '[writing-mode:vertical-rl]',
-};
+export function squareCentre(
+  placement: Placement,
+  tracks: number,
+): { readonly x: number; readonly y: number } {
+  const units = tracks - 2 + 4;
+  const offset = (line: number): number => (line === 1 ? 0 : line === tracks ? units - 2 : line);
+  const size = (line: number): number => (line === 1 || line === tracks ? 2 : 1);
+  return {
+    x: ((offset(placement.column) + size(placement.column) / 2) / units) * 100,
+    y: ((offset(placement.row) + size(placement.row) / 2) / units) * 100,
+  };
+}

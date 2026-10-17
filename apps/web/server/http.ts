@@ -1,5 +1,6 @@
 import 'server-only';
 import { NextResponse } from 'next/server';
+import { onlineConfigured } from './db';
 
 /**
  * The error shape, in one place.
@@ -40,10 +41,18 @@ export function serverError(context: string, error: unknown) {
 
 /**
  * Wraps a handler so that a thrown infrastructure failure becomes a 500 rather
- * than an unhandled rejection. Rule violations never reach here — they are
+ * than an unhandled rejection, and a deployment with no database answers 503
+ * instead of failing on its first query. Rule violations never reach here — they are
  * returned as values and mapped to 422 by the route itself.
  */
 export async function handle(context: string, run: () => Promise<Response>): Promise<Response> {
+  if (!onlineConfigured()) {
+    return fail(
+      503,
+      'ONLINE_UNAVAILABLE',
+      'Online play is not switched on for this server yet. You can still play the computer.',
+    );
+  }
   try {
     return await run();
   } catch (error) {

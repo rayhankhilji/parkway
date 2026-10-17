@@ -84,6 +84,10 @@ export function getLegalActions(state: GameState, playerId: PlayerId): readonly 
       // Any solvent player still in the running may act, whosever turn it is.
       if (!state.phase.activeBidderIds.includes(playerId)) break;
 
+      // The leading bidder has nobody to outbid and nothing to pass on, so they
+      // simply wait for the others or the clock.
+      if (state.phase.highBidderId === playerId) break;
+
       const minimum = minimumBid(state, state.phase.highBid);
       if (player.cash >= minimum) {
         actions.push({
@@ -93,10 +97,7 @@ export function getLegalActions(state: GameState, playerId: PlayerId): readonly 
           maximum: player.cash,
         });
       }
-      // The leading bidder has nothing to pass on.
-      if (state.phase.highBidderId !== playerId) {
-        actions.push({ type: 'PASS_BID' });
-      }
+      actions.push({ type: 'PASS_BID' });
       /*
        * AUCTION_TIMEOUT is deliberately absent.
        *

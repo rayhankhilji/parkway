@@ -1,121 +1,245 @@
 @import 'tailwindcss';
 
 /*
- * The design system, as the only source of visual values in the app.
+ * Parkway's design system — "premium tabletop".
  *
- * Every colour, radius, spacing step, type size, shadow and easing curve in
- * DESIGN.md is declared here and nowhere else. Tailwind's dynamic spacing scale is
- * deliberately switched off below so that an off-scale value like `p-7` does not
- * silently resolve — it simply produces no utility, which turns the design rule
- * into a build-time fact rather than a review comment.
+ * The game is a beautiful physical board on a felt table: an ivory board with
+ * rich group colours, glossy tokens, real dice, and warm dark chrome around it
+ * with a gold accent. Every colour in the app is declared here. Tailwind's
+ * default palette is switched off so an off-brand colour cannot slip in, but
+ * its spacing, type and radius scales are kept — they are good, and fighting
+ * them buys nothing.
  */
 
-@theme {
-  /* Reset Tailwind's defaults so only the values below can be used. */
+/*
+ * `static`, because player and group colours are looked up by name at runtime
+ * (`var(--color-player-${colour})`), which Tailwind cannot see to keep.
+ */
+@theme static {
   --color-*: initial;
-  --spacing-*: initial;
-  --spacing: initial;
-  --radius-*: initial;
-  --shadow-*: initial;
-  --text-*: initial;
   --font-*: initial;
+  --shadow-*: initial;
   --ease-*: initial;
 
-  /* Surfaces and text */
-  --color-bg: #0b0c0e;
-  --color-surface: #15171a;
-  --color-surface-raised: #1c1f24;
-  --color-border: #24272c;
-  --color-border-strong: #333840;
-  --color-text: #e9ebee;
-  --color-text-muted: #9aa1ab;
-  --color-text-faint: #6b727c;
+  /* The table */
+  --color-felt: #173d30;
+  --color-felt-deep: #0b1d16;
+  --color-felt-edge: #06110c;
 
-  /* Accent, money, status */
-  --color-accent: #6e8bff;
-  --color-accent-solid: #3b5bdb;
-  --color-money: #e3b341;
-  --color-success: #3fb950;
-  --color-warning: #d29922;
-  --color-danger: #f0616d;
+  /* Chrome: warm charcoal, never pure grey */
+  --color-bg: #0d0b09;
+  --color-surface: #17140f;
+  --color-surface-raised: #221d16;
+  --color-surface-high: #2d261d;
+  --color-border: #2f281f;
+  --color-border-strong: #4a3f30;
+  --color-text: #f5eee0;
+  --color-text-muted: #bfb29c;
+  --color-text-faint: #857a68;
 
-  /* Property groups — functional identity, never decorative */
-  --color-group-1: #8c6239;
-  --color-group-2: #7fc4e8;
-  --color-group-3: #d4589a;
-  --color-group-4: #e8873a;
-  --color-group-5: #e0474c;
-  --color-group-6: #e8c547;
-  --color-group-7: #3fa060;
-  --color-group-8: #4a6fd4;
-  --color-group-rail: #c3c8d0;
-  --color-group-utility: #8f97a3;
+  /* The board itself: card stock and ink */
+  --color-ivory: #f7f0e1;
+  --color-ivory-deep: #ebe0c8;
+  --color-paper-line: #cdbd99;
+  --color-ink: #231d16;
+  --color-ink-muted: #6d604c;
 
-  /* Player colours — assigned in seat order, unique within a game */
-  --color-player-rose: #f0616d;
-  --color-player-amber: #e3b341;
-  --color-player-emerald: #3fb950;
-  --color-player-sky: #57b6e8;
-  --color-player-violet: #a17bf0;
-  --color-player-slate: #98a0ac;
+  /* Accent and status */
+  --color-gold: #e6bc5f;
+  --color-gold-bright: #f7d98c;
+  --color-gold-deep: #9e7426;
+  --color-good: #4fca80;
+  --color-bad: #f2685d;
+  --color-warn: #f1aa42;
+  --color-info: #7cb4f0;
 
-  /* Utility colours the system needs but does not theme */
+  /* Property groups */
+  --color-group-1: #8a5636;
+  --color-group-2: #86c8e6;
+  --color-group-3: #d4519a;
+  --color-group-4: #f08a2e;
+  --color-group-5: #dd3a3f;
+  --color-group-6: #f1c232;
+  --color-group-7: #2f9d5c;
+  --color-group-8: #2c56c6;
+  --color-group-rail: #3a332b;
+  --color-group-utility: #7e8a96;
+
+  /* Player colours — assigned in seat order */
+  --color-player-rose: #f2606f;
+  --color-player-amber: #f5b83d;
+  --color-player-emerald: #37c47a;
+  --color-player-sky: #4fb3f0;
+  --color-player-violet: #a77ef5;
+  --color-player-slate: #cfd5dd;
+
   --color-white: #ffffff;
+  --color-black: #000000;
   --color-transparent: transparent;
   --color-current: currentColor;
   --color-inherit: inherit;
-  --color-scrim: rgb(0 0 0 / 0.6);
+  --color-scrim: rgb(5 4 3 / 0.66);
 
-  /* Spacing — base 4px, no intermediate steps */
-  --spacing-0: 0px;
-  --spacing-1: 4px;
-  --spacing-2: 8px;
-  --spacing-3: 12px;
-  --spacing-4: 16px;
-  --spacing-5: 20px;
-  --spacing-6: 24px;
-  --spacing-8: 32px;
-  --spacing-10: 40px;
-  --spacing-12: 48px;
-  --spacing-16: 64px;
-
-  /* Type — 14px base, 1.2 ratio */
-  --text-xs: 11px;
-  --text-xs--line-height: 16px;
-  --text-sm: 12px;
-  --text-sm--line-height: 18px;
-  --text-base: 14px;
-  --text-base--line-height: 21px;
-  --text-md: 17px;
-  --text-md--line-height: 24px;
-  --text-md--letter-spacing: -0.011em;
-  --text-lg: 20px;
-  --text-lg--line-height: 28px;
-  --text-lg--letter-spacing: -0.011em;
-  --text-xl: 24px;
-  --text-xl--line-height: 32px;
-  --text-xl--letter-spacing: -0.011em;
-  --text-2xl: 34px;
-  --text-2xl--line-height: 40px;
-  --text-2xl--letter-spacing: -0.011em;
-
-  /* Two families, no display face */
   --font-sans: var(--font-inter), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-fraunces), Georgia, 'Times New Roman', serif;
   --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
 
-  /* Radii */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-card: 0 1px 0 rgb(255 240 210 / 0.04) inset, 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-popover: 0 12px 32px rgb(0 0 0 / 0.5);
+  --shadow-dialog: 0 24px 64px rgb(0 0 0 / 0.65);
+  --shadow-board:
+    0 2px 0 #3b2a17, 0 6px 0 #24190d, 0 40px 80px rgb(0 0 0 / 0.55), 0 12px 24px rgb(0 0 0 / 0.4);
+  --shadow-gold: 0 0 0 1px rgb(230 188 95 / 0.5), 0 0 24px rgb(230 188 95 / 0.25);
 
-  /* Exactly two shadows. Nothing else in the system gets one. */
-  --shadow-popover: 0 8px 24px rgb(0 0 0 / 0.5);
-  --shadow-dialog: 0 16px 48px rgb(0 0 0 / 0.6);
-
-  /* Motion */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --duration-fast: 120ms;
-  --duration-slow: 200ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-pop-in: pop-in 320ms var(--ease-spring) both;
+  --animate-fade-up: fade-up 360ms var(--ease-out) both;
+  --animate-stamp: stamp 520ms var(--ease-spring) both;
+  --animate-float-up: float-up 1400ms var(--ease-out) both;
+  --animate-pulse-ring: pulse-ring 1.6s var(--ease-out) infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-hop: hop 180ms var(--ease-out);
+  --animate-banner: banner 2200ms var(--ease-out) both;
+  --animate-card-flip: card-flip 620ms var(--ease-out) both;
+  --animate-bob: bob 5s ease-in-out infinite;
+  --animate-sheet-up: sheet-up 340ms var(--ease-out) both;
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.85) translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes stamp {
+    0% {
+      opacity: 0;
+      transform: scale(2.2) rotate(-12deg);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(0.92) rotate(2deg);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes float-up {
+    0% {
+      opacity: 0;
+      transform: translateY(6px) scale(0.9);
+    }
+    15% {
+      opacity: 1;
+      transform: translateY(0) scale(1.05);
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-28px) scale(1);
+    }
+  }
+  @keyframes pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0 rgb(230 188 95 / 0.55);
+    }
+    100% {
+      box-shadow: 0 0 0 14px rgb(230 188 95 / 0);
+    }
+  }
+  @keyframes shimmer {
+    from {
+      background-position: -200% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+  @keyframes hop {
+    0% {
+      transform: translateY(0) scale(1, 1);
+    }
+    45% {
+      transform: translateY(-38%) scale(0.96, 1.04);
+    }
+    100% {
+      transform: translateY(0) scale(1, 1);
+    }
+  }
+  @keyframes banner {
+    0% {
+      opacity: 0;
+      transform: translateY(14px) scale(0.92);
+    }
+    10% {
+      opacity: 1;
+      transform: translateY(0) scale(1.02);
+    }
+    16% {
+      transform: none;
+    }
+    85% {
+      opacity: 1;
+      transform: none;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-10px) scale(0.98);
+    }
+  }
+  @keyframes card-flip {
+    0% {
+      opacity: 0;
+      transform: perspective(900px) rotateY(-100deg) scale(0.7);
+    }
+    60% {
+      opacity: 1;
+      transform: perspective(900px) rotateY(12deg) scale(1.03);
+    }
+    100% {
+      opacity: 1;
+      transform: perspective(900px) rotateY(0) scale(1);
+    }
+  }
+  @keyframes bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+  @keyframes sheet-up {
+    from {
+      transform: translateY(24px);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
 }
 
 @layer base {
@@ -123,46 +247,117 @@
     color-scheme: dark;
   }
 
-  html {
-    /* Dense application UI, not a marketing page. */
-    font-size: 14px;
+  html,
+  body {
+    min-height: 100%;
   }
 
   body {
     background-color: var(--color-bg);
     color: var(--color-text);
     font-family: var(--font-sans);
-    font-size: var(--text-base);
-    line-height: var(--text-base--line-height);
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Anything that changes in place must not reflow. */
   .tabular,
   [data-numeric] {
-    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
 
-  /* Focus is never removed, only made visible on keyboard interaction. */
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-gold);
     outline-offset: 2px;
   }
 
   ::selection {
-    background-color: var(--color-accent-solid);
+    background-color: var(--color-gold-deep);
     color: var(--color-white);
   }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  /* The felt: a lit table with a soft vignette and a whisper of fibre. */
+  .felt {
+    background-color: var(--color-felt-deep);
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 38%, rgb(46 110 84 / 0.55), transparent 70%),
+      radial-gradient(ellipse at 50% 120%, var(--color-felt-edge), transparent 60%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Dark warm glass for chrome that sits on the felt. */
+  .glass {
+    background-color: rgb(20 17 13 / 0.78);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    border: 1px solid rgb(255 236 200 / 0.08);
+  }
+
+  /* The ivory board stock, with a faint paper grain. */
+  .paper {
+    background-color: var(--color-ivory);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.3 0 0 0 0 0.15 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .gold-text {
+    background: linear-gradient(
+      180deg,
+      var(--color-gold-bright),
+      var(--color-gold) 55%,
+      var(--color-gold-deep)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+}
+
+/* A 3D die. Faces are positioned once; the cube rotates to show a value. */
+.die {
+  transform-style: preserve-3d;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.die-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 18%;
+  background: radial-gradient(circle at 30% 25%, #ffffff, #f1ead9 60%, #ddd2b8);
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 0.06),
+    inset 0 -3px 6px rgb(120 95 50 / 0.18);
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  padding: 14%;
+  backface-visibility: hidden;
+}
+.die-pip {
+  width: 72%;
+  height: 72%;
+  margin: auto;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, #4a3a28, #17110a 70%);
 }
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0ms !important;
+    animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0ms !important;
+    transition-duration: 1ms !important;
     scroll-behavior: auto !important;
   }
 }

@@ -73,6 +73,11 @@ export function handlePlaceBid(
     return err(violation('ALREADY_PASSED', 'You have passed on this lot.'));
   }
 
+  if (phase.highBidderId === playerId) {
+    // Raising your own standing bid only moves money from you to the bank.
+    return err(violation('ALREADY_LEADING', 'You already hold the leading bid.'));
+  }
+
   const minimum = minimumBid(state, phase.highBid);
   if (amount < minimum) {
     return err(violation('BID_BELOW_MINIMUM', `The next bid must be at least ${minimum}.`));
