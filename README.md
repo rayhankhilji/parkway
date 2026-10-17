@@ -54,6 +54,12 @@ pnpm typecheck
 pnpm lint
 ```
 
+## Deploying
+
+The app deploys to Vercel as-is. Import the repository, set **Root Directory** to `apps/web`, and leave everything else on its defaults: Vercel picks up pnpm and the workspace from the lockfile.
+
+With no environment variables set, solo play against the computer works fully and the online option explains that rooms are not switched on. To turn online play on, run the migrations against a Supabase project and add the four variables from `.env.example` in the Vercel project settings, setting `NEXT_PUBLIC_APP_URL` to the deployment's URL.
+
 ## Progress
 
 | Stage | What it covers                                                                       | State                                                           |
