@@ -91,10 +91,16 @@ export function createBot(playerId: PlayerId, difficulty: Difficulty, seed = 1):
    * are always available, but every action is spent on an offer already refused.
    *
    * Remembering the last one and refusing to repeat it is enough: after a decline
-   * the bot moves on to rolling, and the memory clears at the end of its turn so
-   * a genuinely changed position can be tried again.
+   * the bot moves on to rolling, and the memory clears once the turn passes to
+   * someone else so a genuinely changed position can be tried again.
+   *
+   * It clears when the turn is seen to change, not when the bot chooses to end
+   * it. A caller may throw a decision away unplayed — the solo driver does
+   * whenever someone else moves first — and forgetting on a choice that never
+   * happened let the bot re-offer a refused deal every time it was declined.
    */
   let lastOffer: string | null = null;
+  let turnOf: PlayerId | null = null;
 
   /** A coin weighted by the profile's blunder rate. */
   const blunders = (): boolean => {
@@ -125,9 +131,12 @@ export function createBot(playerId: PlayerId, difficulty: Difficulty, seed = 1):
     playerId,
     difficulty,
     decide: (view) => {
-      const action = decide(view, profile, blunders, pick, remember);
-      if (action?.type === 'END_TURN') remember.clear();
-      return action;
+      const active = view.state.turnOrder[view.state.activeIndex] ?? null;
+      if (active !== turnOf) {
+        turnOf = active;
+        remember.clear();
+      }
+      return decide(view, profile, blunders, pick, remember);
     },
   };
 }

@@ -147,7 +147,14 @@ describe('passing', () => {
     const result = attempt(state, { type: 'PASS_BID' }, 'bo');
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('ALREADY_PASSED');
-    expect(turnActionTypes(state, 'bo')).toEqual(['PLACE_BID']);
+    expect(turnActionTypes(state, 'bo')).toEqual([]);
+  });
+
+  it('refuses the leading bidder raising their own bid', () => {
+    const state = act(auctioning(), { type: 'PLACE_BID', amount: 50 }, 'bo');
+    const result = attempt(state, { type: 'PLACE_BID', amount: 60 }, 'bo');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe('ALREADY_LEADING');
   });
 });
 

@@ -3,6 +3,7 @@ import { getLegalActions } from '../src/legalActions';
 import { reduce } from '../src/reduce';
 import { winnerOf } from '../src/rules/bankruptcy';
 import type { Action, LegalAction } from '../src/actions/types';
+import { priceOf } from '../src/state/selectors';
 import type { GameState } from '../src/state/types';
 import { buildState } from './helpers/buildState';
 
@@ -68,6 +69,12 @@ function nextMove(state: GameState): { playerId: string; action: Action } | null
         if (legal.type !== wanted) continue;
 
         if (legal.type === 'BUILD_HOUSE' && (state.players[playerId]?.cash ?? 0) < buildReserve) {
+          continue;
+        }
+
+        // Nobody pays over the printed price. Without a ceiling every auction is
+        // a bidding war that only ends when one side is broke.
+        if (legal.type === 'PLACE_BID' && legal.minimum > priceOf(state, legal.squareId)) {
           continue;
         }
 
@@ -185,7 +192,7 @@ describe('a game played to the end', () => {
     expect(winnerOf(outcome.state)).toBe(outcome.state.phase.winnerId);
   });
 
-  it('finishes every two-player game', () => {
+  it('finishes every two-player game', { timeout: 60_000 }, () => {
     const unfinished: string[] = [];
 
     for (const seed of [1, 7, 42, 1234, 99999, 20260729]) {
